@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.expo/
+.next/
+dist/
+ios/
+android/
+.turbo/
+supabase/.temp/
+.DS_Store
