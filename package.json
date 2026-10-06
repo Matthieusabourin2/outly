@@ -1,8 +1,10 @@
 {
   "name": "outly",
   "private": true,
-  "packageManager": "pnpm@9.12.0",
-  "engines": { "node": ">=20" },
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev:customer": "pnpm --filter @outly/customer start",
     "dev:partner": "pnpm --filter @outly/partner start",
@@ -12,7 +14,8 @@
     "db:types": "supabase gen types typescript --local > packages/db/src/types.ts",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "env:local": "node scripts/env-local.mjs"
   },
   "devDependencies": {
     "turbo": "^2.1.0",

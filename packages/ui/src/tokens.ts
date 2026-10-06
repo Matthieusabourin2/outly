@@ -40,6 +40,26 @@ export const colors = {
   sourceDemo: '#F472B6',         // "Demo" — demo env only
 } as const;
 
+/**
+ * Admin light theme (SPEC §11: admin may have light mode; the apps are dark-only).
+ * Same brand colours, light surfaces. Admin maps both palettes to CSS variables.
+ */
+export const adminLightColors = {
+  ...colors,
+  background: '#F7F7FB',
+  surface: '#FFFFFF',
+  surfaceRaised: '#F0EFF8',
+  border: '#E3E1EF',
+  overlay: 'rgba(11, 11, 30, 0.45)',
+  text: '#0B0B1E',
+  textSecondary: '#3F3F5C',
+  textMuted: '#6B6B88',
+  primarySoft: '#EDE7FE',
+  successSoft: '#DCFCE7',
+  warningSoft: '#FEF3C7',
+  dangerSoft: '#FEE2E2',
+} as const;
+
 export const radii = { xs: 6, sm: 10, md: 14, lg: 20, xl: 28, pill: 999 } as const;
 
 export const spacing = { 0: 0, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48 } as const;
@@ -75,5 +95,5 @@ export const layout = {
   minTouch: 44,
 } as const;
 
-export const tokens = { colors, radii, spacing, fonts, type, shadow, layout };
+export const tokens = { colors, adminLightColors, radii, spacing, fonts, type, shadow, layout };
 export type Tokens = typeof tokens;
