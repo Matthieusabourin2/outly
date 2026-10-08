@@ -50,15 +50,19 @@ Supabase Pro (région Sydney) · Cloudflare Pages (`domaine`, `staff.domaine`, `
 | 19 – 20 | Line-up, réduction boissons (éteinte), finitions · **ouverture des inscriptions** |
 | 21 – 23 | Répétition chez Rouge avec les vigiles |
 
-## Qui fait quoi
+## L'équipe tech
 
-| | Gabriel (`gabrielsabourin1-netizen`, Sydney) | Tondal775 (France) |
-|---|---|---|
-| Rouge | Base de données, connexion, QR, **scan** (testé sur place), **mise en ligne**, contenu de la soirée, tests sur téléphones | **Tableau de bord admin** (`apps/admin`) sur les **données de démo** |
-| À partir du 19 oct | — | Renfort sur les écrans du site client |
-| Toujours | Relit les PR de l'autre | Relit les PR de l'autre |
+**Gabriel** (`gabrielsabourin1-netizen`, Sydney, Mac) et **Tondal775** (France, Windows) sont **co-responsables techniques, à égalité** : même niveau de responsabilité sur le code, les choix techniques et la qualité. Chacun relit et peut refuser les PR de l'autre. Les décisions techniques importantes se prennent à deux ; les décisions produit et budget reviennent aux CEO.
 
-**Règle d'accès aux données :** Tondal775 travaille uniquement en local, sur les données de démo. Pas d'accès à la base de production ni aux clés de production pour l'instant.
+**Répartition des chantiers pour Rouge** (une répartition du travail, pas une hiérarchie) :
+
+| Chantier | Porté par |
+|---|---|
+| Base de données, connexion, QR, scan (testé sur place à Sydney), mise en ligne, contenu de la soirée, tests sur téléphones | Gabriel (sur place) |
+| Tableau de bord admin (`apps/admin`) ; renfort sur le site client à partir du 19 oct | Tondal775 |
+| Relecture des PR | Les deux, chacun celles de l'autre |
+
+**Accès aux données de production :** pour l'instant, Tondal775 travaille en local sur les données de démo uniquement (pas de clés ni de base de production), jusqu'à décision contraire de l'équipe.
 
 **Décalage horaire :** Sydney a ~9 h d'avance sur la France. On travaille par PR, en asynchrone.
 
