@@ -13,6 +13,7 @@ Le code est le même sur les deux systèmes : tout tourne sur Node.js.
 | **Docker** | [Docker Desktop](https://www.docker.com/products/docker-desktop/) (accepter WSL 2, redémarrer) | [OrbStack](https://orbstack.dev) ou Docker Desktop | Fait tourner la base Supabase en local |
 | **Python 3** | [python.org](https://www.python.org/downloads/) → cocher **« Add python.exe to PATH »** | déjà présent | Lance les tests de sécurité de la base |
 | **pgserver** | `pip install pgserver` | `python3 -m pip install --user pgserver` | Idem |
+| **GitHub CLI** (`gh`) | `winget install --id GitHub.cli -e` puis `gh auth login` | `brew install gh` puis `gh auth login` | Permet à Claude d'ouvrir, relire et fusionner les PR |
 | **VS Code** + Claude Code | [code.visualstudio.com](https://code.visualstudio.com) | idem | L'éditeur |
 
 Pas besoin d'installer la CLI Supabase : elle est fournie par le projet (`pnpm install` s'en occupe).
@@ -65,3 +66,35 @@ La CI GitHub relance ces vérifications sur chaque PR. Une PR rouge n'est pas fu
 - Les règles du projet sont dans `CLAUDE.md`, les décisions produit dans `docs/SPEC.md`. Claude les lit automatiquement.
 - Les fichiers `.env.local` ne sont **jamais** envoyés sur GitHub (ils sont ignorés).
 - Arrêter la base locale en fin de journée : `pnpm db:stop`.
+
+## Le cycle de travail, en phrases à dire à Claude
+
+Claude connaît git et GitHub : il suffit de lui dire quoi faire, en français.
+
+**1. Avant de commencer à travailler**
+> « Mets-moi à jour avec main. »
+
+(Claude fait `git checkout main` puis `git pull` : tu récupères tout ce que l'autre a fusionné.)
+
+**2. Commencer un nouveau sujet**
+> « Crée une branche `admin/dashboard` à partir de main. »
+
+**3. Envoyer son travail sur GitHub**
+> « Vérifie que tout passe (typecheck, lint, tests), commit mon travail et pousse ma branche. »
+
+Le code est alors sur GitHub, mais pas encore dans `main`.
+
+**4. Proposer son travail à l'autre**
+> « Ouvre une PR vers main avec un résumé clair de ce qui a changé et comment le tester. »
+
+Claude donne le lien de la PR → l'envoyer à l'autre.
+
+**5. Relire le travail de l'autre**
+> « Relis la PR #12 : explique-moi ce qu'elle change, et signale les problèmes. »
+
+Puis, si c'est bon : bouton **Merge pull request** sur GitHub (ou « fusionne la PR #12 »).
+
+**6. Récupérer le travail de l'autre pendant qu'on est sur sa propre branche**
+> « Récupère les derniers changements de main dans ma branche. »
+
+Si vous avez modifié les mêmes lignes, Claude signale un **conflit** : il montre les deux versions et demande laquelle garder. Ne jamais forcer (`--force`) sans en parler à l'autre.
