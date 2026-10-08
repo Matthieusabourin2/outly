@@ -18,6 +18,7 @@ Le code est le même sur les deux systèmes : tout tourne sur Node.js.
 Pas besoin d'installer la CLI Supabase : elle est fournie par le projet (`pnpm install` s'en occupe).
 
 > **Windows :** utilise le terminal intégré de VS Code (PowerShell). Si `pnpm` n'est pas reconnu après installation, ferme et rouvre VS Code.
+> Installe aussi `pip install tzdata` : le Postgres de `pgserver` sous Windows est livré sans les fuseaux horaires (`Australia/Sydney`), et `pnpm db:test` les ajoute à partir de ce paquet.
 
 ## 2. Récupérer le projet
 
@@ -40,6 +41,8 @@ pnpm env:local       # crée les fichiers .env.local des 3 applis
 ```
 
 La base locale ne contient **que des données de démo** (bars et deals fictifs). Aucune donnée réelle d'utilisateur.
+
+> **Windows :** avec Docker Desktop, les conteneurs analytics, Studio et pg_meta ne passent jamais « healthy » et font échouer `supabase start`. Sous Windows, `pnpm db:start` les saute donc automatiquement : ce sont des outils d'inspection, les applis n'en ont pas besoin. Conséquence : pas de Studio (http://localhost:54323) sous Windows.
 
 ## 4. Lancer les applis
 
