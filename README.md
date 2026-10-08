@@ -8,18 +8,14 @@ Good times, anytime. A going-out app for Sydney: customer app, partner venue app
 
 Status: **slice 0** — monorepo, local Supabase (schema + RLS, tested), demo seed, design system, three app shells.
 
-## Prerequisites (macOS)
+## Setup (Windows or macOS)
 
-    brew install node@24 pnpm supabase/tap/supabase
-    brew install --cask orbstack          # Docker runtime for local Supabase
-    python3 -m pip install --user pgserver   # for `pnpm db:test` without Docker
-
-Phone: install **Expo Go**. iOS simulator: install **Xcode** from the App Store.
+See **`docs/SETUP.md`** — tools to install, first run, and how we work as two developers.
 
 ## First run
 
     pnpm install
-    supabase start                       # first run downloads Docker images
+    pnpm db:start                        # first run downloads Docker images
     pnpm db:reset                        # migrations + demo seed
     pnpm env:local                       # writes apps/*/.env.local from `supabase status`
     pnpm db:types                        # regenerate packages/db/src/types.ts

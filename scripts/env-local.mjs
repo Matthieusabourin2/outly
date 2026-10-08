@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 
-const status = JSON.parse(execFileSync('supabase', ['status', '-o', 'json'], { encoding: 'utf8' }));
+const status = JSON.parse(execFileSync('supabase', ['status', '-o', 'json'], { encoding: 'utf8', shell: process.platform === 'win32' }));
 const url = status.API_URL;
 const key = status.PUBLISHABLE_KEY ?? status.ANON_KEY;
 if (!url || !key) {
