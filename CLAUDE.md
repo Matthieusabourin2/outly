@@ -1,11 +1,11 @@
 # Outly — instructions for Claude Code
 
 Outly is a Sydney going-out app: three products (customer app, partner venue app, admin platform) on one Supabase backend.
-**Read `docs/SPEC.md` before any work.** It is the source of truth; decisions D1–D12 are settled. Do not reopen them silently — if something in the spec seems wrong, stop and say so, and record changes in the "Amendments" section of the spec.
+**Read `docs/SPEC.md` (including the Amendments section) and `docs/PLAN.md` (current plan, deadlines, who does what) before any work.** It is the source of truth; decisions D1–D12 are settled. Do not reopen them silently — if something in the spec seems wrong, stop and say so, and record changes in the "Amendments" section of the spec.
 
 ## Stack
 - pnpm workspaces + Turborepo, TypeScript strict everywhere.
-- `apps/customer`, `apps/partner`: Expo (latest stable SDK) + Expo Router. Dark theme only.
+- `apps/customer`, `apps/partner`: Expo (latest stable SDK) + Expo Router. Dark theme only. **Shipped as websites (Expo web) for the 24 Oct launch**, native store builds by 8 Nov (SPEC A2, A3).
 - `apps/admin`: Next.js App Router + Tailwind + shadcn/ui.
 - `packages/ui` (tokens + RN components), `packages/core` (zod schemas, business rules), `packages/db` (generated Supabase types).
 - `supabase/`: migrations, Edge Functions (Deno), seed, tests.
@@ -33,11 +33,13 @@ Outly is a Sydney going-out app: three products (customer app, partner venue app
 - The mockup boards are mood references, not pixel specs; where they conflict with the spec, the spec wins (e.g. tab bars, Live Orders cut, no Facebook login, no testimonials in-app).
 - Keep copy in English (Australian spelling: "favourite", "personalise").
 
-## Commands (to be wired up in slice 0)
+## Commands
 - `pnpm dev:customer` / `pnpm dev:partner` / `pnpm dev:admin`
+- `pnpm db:start` / `pnpm db:stop` — local Supabase (Docker)
 - `pnpm db:reset` — reset local Supabase and apply migrations + demo seed
-- `pnpm db:test` — run `supabase/tests/*.sql`
-- `pnpm db:types` — `supabase gen types typescript --local > packages/db/src/types.ts`
+- `pnpm env:local` — write `apps/*/.env.local` from the running local Supabase
+- `pnpm db:test` — migrations + seed + RLS smoke tests on a throwaway Postgres (no Docker)
+- `pnpm db:types` — regenerate `packages/db/src/types.ts`
 - `pnpm typecheck`, `pnpm lint`, `pnpm test`
 
 ## Error codes
