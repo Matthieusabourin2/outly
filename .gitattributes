@@ -1,0 +1,6 @@
+# Same line endings on macOS and Windows (avoids whole-file diffs between the two devs).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.ttf binary

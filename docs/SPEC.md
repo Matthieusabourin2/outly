@@ -252,3 +252,6 @@ Rules: tools return real IDs; the model may only recommend venues/deals returned
 ## Amendments
 
 _(Record any change to a decision here with date and reason.)_
+
+- **2026-10-06 — Slice 0, dev-only anonymous sign-in.** RLS only lets signed-in users read `venues`, and real sign-in is slice 1. To prove the app → Supabase → RLS chain in slice 0, the local `supabase/config.toml` enables anonymous sign-ins and the Expo shells call `ensureDevSession()`. **Remove both in slice 1**; never enable anonymous sign-in on a hosted project.
+- **2026-10-06 — Supabase key naming.** Clients use the *publishable* key (`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), the current name for the former anon key. Env files live in each app folder.

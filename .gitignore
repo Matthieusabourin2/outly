@@ -10,3 +10,7 @@ android/
 .turbo/
 supabase/.temp/
 .DS_Store
+expo-env.d.ts
+*.tsbuildinfo
+next-env.d.ts
+coverage/

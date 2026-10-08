@@ -1,20 +1,26 @@
 {
   "name": "outly",
   "private": true,
-  "packageManager": "pnpm@9.12.0",
-  "engines": { "node": ">=20" },
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev:customer": "pnpm --filter @outly/customer start",
     "dev:partner": "pnpm --filter @outly/partner start",
     "dev:admin": "pnpm --filter @outly/admin dev",
     "db:reset": "supabase db reset",
-    "db:test": "python3 supabase/tests/run_local.py",
-    "db:types": "supabase gen types typescript --local > packages/db/src/types.ts",
+    "db:test": "node scripts/db-test.mjs",
+    "db:types": "node scripts/db-types.mjs",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "env:local": "node scripts/env-local.mjs",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop"
   },
   "devDependencies": {
+    "supabase": "2.119.0",
     "turbo": "^2.1.0",
     "typescript": "^5.6.0"
   }
