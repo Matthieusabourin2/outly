@@ -39,7 +39,20 @@ Docker doit être ouvert. La première fois, le téléchargement prend plusieurs
 pnpm db:start        # démarre Supabase en local
 pnpm db:reset        # applique les migrations + les données de démo
 pnpm env:local       # crée les fichiers .env.local des 3 applis
+pnpm db:seed-users   # crée les comptes de démo (à relancer après chaque db:reset)
 ```
+
+**Comptes de démo** (local uniquement, mot de passe `OutlyDemo2026!`) :
+
+| Email | Rôle | Pour tester |
+|---|---|---|
+| `admin@demo.outly` | équipe Outly (`outly_admin`) | le site admin |
+| `manager@demo.outly` | manager du Velvet Tram | les stats « Ce soir » du site équipe |
+| `door@demo.outly` | vigile du Velvet Tram | le scan |
+| `bar@demo.outly` | barman du Velvet Tram | le scan bar (réduction boissons) |
+| `guest@demo.outly` | client | rejoindre la guest list, le pass |
+
+La soirée de démo « Outly Launch Night » (Velvet Tram, ce soir, 200 places) reproduit le parcours de Rouge.
 
 La base locale ne contient **que des données de démo** (bars et deals fictifs). Aucune donnée réelle d'utilisateur.
 

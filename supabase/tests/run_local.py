@@ -31,9 +31,10 @@ srv = pgserver.get_server(d, cleanup_mode='stop')
 uri = srv.get_uri()
 
 migrations = sorted(glob.glob(os.path.join(base, 'migrations', '*.sql')))
+rls_tests = sorted(glob.glob(os.path.join(base, 'tests', 'rls_*.sql')))  # each file is self-contained
 files = [os.path.join(base, 'tests', 'supabase_stub.sql'), *migrations,
          os.path.join(base, 'tests', 'stub_grants.sql'), os.path.join(base, 'seed_demo.sql'),
-         os.path.join(base, 'tests', 'rls_smoke.sql')]
+         *rls_tests]
 
 oks = 0
 for path in files:

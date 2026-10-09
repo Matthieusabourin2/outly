@@ -6,6 +6,7 @@
 export const OUTLY_ERROR_MESSAGES = {
   OUTLY_AUTH_REQUIRED: 'Please log in to continue.',
   OUTLY_UNDER_18: 'Outly is for people aged 18 and over.',
+  OUTLY_SUSPENDED: 'Your account is suspended. Contact Outly support if you think this is a mistake.',
   OUTLY_FORBIDDEN: "You don't have access to do that.",
   OUTLY_FORBIDDEN_COLUMN: "You don't have permission to change that setting.",
   OUTLY_NOT_FOUND: "We couldn't find that. It may have been removed.",

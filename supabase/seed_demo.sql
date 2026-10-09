@@ -37,3 +37,31 @@ insert into guest_lists (venue_id, night, capacity, closes_at) values
  ('00000000-0000-4000-a000-000000000001', (now() at time zone 'Australia/Sydney')::date, 120,
    (((now() at time zone 'Australia/Sydney')::date + time '22:00') at time zone 'Australia/Sydney')),
  ('00000000-0000-4000-a000-000000000002', (now() at time zone 'Australia/Sydney')::date, 60, null);
+
+-- Demo launch night: mirrors the Rouge flow (SPEC A4) with fictional data.
+-- Event + linked guest list (200, no closing time) + line-up + a drinks offer left OFF (draft).
+insert into events (id, venue_id, title, description, tags, starts_at, ends_at, source, status, is_demo) values
+ ('00000000-0000-4000-b000-000000000001','00000000-0000-4000-a000-000000000002','Outly Launch Night',
+  'Skip the queue with Outly: join the list and use the fast lane.','{launch,dj}',
+  ((now() at time zone 'Australia/Sydney')::date + time '21:00') at time zone 'Australia/Sydney',
+  ((now() at time zone 'Australia/Sydney')::date + 1 + time '03:00') at time zone 'Australia/Sydney',
+  'demo','active',true);
+
+insert into guest_lists (id, venue_id, event_id, night, capacity, closes_at, note) values
+ ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-a000-000000000002','00000000-0000-4000-b000-000000000001',
+  (now() at time zone 'Australia/Sydney')::date, 200, null, 'Fast lane for Outly members');
+
+insert into event_sets (event_id, artist_name, starts_at, ends_at, sort) values
+ ('00000000-0000-4000-b000-000000000001','DJ Demo One',
+  ((now() at time zone 'Australia/Sydney')::date + time '21:00') at time zone 'Australia/Sydney',
+  ((now() at time zone 'Australia/Sydney')::date + time '23:00') at time zone 'Australia/Sydney', 1),
+ ('00000000-0000-4000-b000-000000000001','Sample Collective',
+  ((now() at time zone 'Australia/Sydney')::date + time '23:00') at time zone 'Australia/Sydney',
+  ((now() at time zone 'Australia/Sydney')::date + 1 + time '01:00') at time zone 'Australia/Sydney', 2),
+ ('00000000-0000-4000-b000-000000000001','Placeholder B2B Test',
+  ((now() at time zone 'Australia/Sydney')::date + 1 + time '01:00') at time zone 'Australia/Sydney',
+  ((now() at time zone 'Australia/Sydney')::date + 1 + time '03:00') at time zone 'Australia/Sydney', 3);
+
+insert into deals (id, venue_id, title, description, categories, source, status, is_demo) values
+ ('00000000-0000-4000-d000-000000000001','00000000-0000-4000-a000-000000000002','10% off cocktails for Outly members',
+  'Show your Outly pass at the bar. Please drink responsibly.','{drinks}','demo','draft',true);
