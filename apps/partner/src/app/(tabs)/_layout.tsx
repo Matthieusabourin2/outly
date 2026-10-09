@@ -3,6 +3,7 @@ import { colors, fonts, layout } from '@outly/ui';
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
+import { canScanBar, canScanDoor, useStaff } from '@/lib/staff';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -13,11 +14,10 @@ function icon(active: IconName, inactive: IconName) {
   return TabIcon;
 }
 
-/**
- * D11: Today · Scan · Bookings · Promote · More.
- * Slice 1 filters these by venue role (venue_door sees Today + Scan only).
- */
+/** Tabs filtered by role: door = Tonight + Scan, bar staff = Tonight + Bar, managers = all. */
 export default function TabsLayout() {
+  const { current } = useStaff();
+  const role = current?.role ?? 'venue_door';
   return (
     <Tabs
       screenOptions={{
@@ -28,11 +28,9 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('today', 'today-outline') }} />
-      <Tabs.Screen name="scan" options={{ title: 'Scan', tabBarIcon: icon('qr-code', 'qr-code-outline') }} />
-      <Tabs.Screen name="bookings" options={{ title: 'Bookings', tabBarIcon: icon('calendar', 'calendar-outline') }} />
-      <Tabs.Screen name="promote" options={{ title: 'Promote', tabBarIcon: icon('megaphone', 'megaphone-outline') }} />
-      <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: icon('ellipsis-horizontal', 'ellipsis-horizontal-outline') }} />
+      <Tabs.Screen name="index" options={{ title: 'Tonight', tabBarIcon: icon('stats-chart', 'stats-chart-outline') }} />
+      <Tabs.Screen name="scan" options={{ title: 'Door', href: canScanDoor(role) ? undefined : null, tabBarIcon: icon('scan', 'scan-outline') }} />
+      <Tabs.Screen name="bar" options={{ title: 'Bar', href: canScanBar(role) ? undefined : null, tabBarIcon: icon('wine', 'wine-outline') }} />
     </Tabs>
   );
 }

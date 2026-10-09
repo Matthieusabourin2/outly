@@ -364,14 +364,34 @@ begin
     select ev.t, sum(ev.j)::int, sum(ev.c)::int, sum(ev.f)::int from ev group by ev.t order by ev.t;
 end $$;
 
+-- Latest scans with the guest's username: managers and Outly staff see the venue's,
+-- door and bar staff only their own (they cannot read customer profiles directly).
+create or replace function recent_scans(p_venue_id uuid, p_limit int default 8)
+returns table (id bigint, result scan_result, kind text, created_at timestamptz, username text)
+language plpgsql stable security definer set search_path = public as $$
+declare me uuid := auth.uid(); all_scans boolean;
+begin
+  if me is null then raise exception 'OUTLY_AUTH_REQUIRED'; end if;
+  if not is_venue_member(p_venue_id) and not is_outly() then raise exception 'OUTLY_FORBIDDEN'; end if;
+  all_scans := can_see_venue_stats(p_venue_id);
+  return query
+    select e.id, e.result, e.kind, e.created_at, p.username::text
+      from scan_events e
+      left join bookings b on b.id = e.booking_id
+      left join profiles p on p.id = b.user_id
+     where e.venue_id = p_venue_id and (all_scans or e.scanned_by = me)
+     order by e.created_at desc
+     limit greatest(1, least(coalesce(p_limit, 8), 50));
+end $$;
+
 -- ---------------------------------------------------------------------
 -- Grants: RPCs for signed-in users only (each function checks its own rights)
 -- ---------------------------------------------------------------------
 revoke execute on function join_event_list(uuid, attendee_visibility), set_attendee_visibility(uuid, attendee_visibility),
   guest_list_stats(uuid), event_attendees(uuid), scan_pass(uuid, text), redeem_offer(uuid, uuid, text),
-  venue_live_stats(uuid, date), venue_activity(uuid, int), is_suspended(uuid), can_see_venue_stats(uuid)
+  venue_live_stats(uuid, date), venue_activity(uuid, int), recent_scans(uuid, int), is_suspended(uuid), can_see_venue_stats(uuid)
   from public, anon;
 grant execute on function join_event_list(uuid, attendee_visibility), set_attendee_visibility(uuid, attendee_visibility),
   guest_list_stats(uuid), event_attendees(uuid), scan_pass(uuid, text), redeem_offer(uuid, uuid, text),
-  venue_live_stats(uuid, date), venue_activity(uuid, int)
+  venue_live_stats(uuid, date), venue_activity(uuid, int), recent_scans(uuid, int)
   to authenticated;

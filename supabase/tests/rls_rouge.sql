@@ -264,3 +264,28 @@ do $$ declare n int; begin
   raise notice 'R12 ok: line-up visible';
 end $$;
 select pg_temp.as_service();
+
+-- R13: recent scans with usernames — managers see all, door sees only their own, customers nothing
+select pg_temp.as_user('a1000000-0000-4000-a000-000000000006');
+do $$ declare n int; u text; begin
+  select count(*), max(username) into n, u from recent_scans('00000000-0000-4000-a000-000000000002', 50);
+  if n <> 7 or u <> 'r_jess' then raise exception 'R13a FAILED: n=% u=%', n, u; end if;
+  raise notice 'R13a ok: manager sees every scan with usernames';
+end $$;
+select pg_temp.as_user('a1000000-0000-4000-a000-000000000005');
+do $$ declare n int; begin
+  select count(*) into n from recent_scans('00000000-0000-4000-a000-000000000002', 50);
+  if n <> 2 then raise exception 'R13b FAILED: bar sees % scans', n; end if;
+  raise notice 'R13b ok: bar staff see only their own scans';
+end $$;
+select pg_temp.as_user('a1000000-0000-4000-a000-000000000001');
+do $$ begin
+  begin
+    perform recent_scans('00000000-0000-4000-a000-000000000002');
+    raise exception 'R13c FAILED';
+  exception when raise_exception then
+    if sqlerrm <> 'OUTLY_FORBIDDEN' then raise exception 'R13c FAILED: %', sqlerrm; end if;
+  end;
+  raise notice 'R13c ok: customers cannot list scans';
+end $$;
+select pg_temp.as_service();

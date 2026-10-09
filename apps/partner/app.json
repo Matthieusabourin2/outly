@@ -21,7 +21,11 @@
       "package": "com.outly.partner"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Outly Staff",
+      "backgroundColor": "#0B0B1E",
+      "themeColor": "#0B0B1E"
     },
     "plugins": [
       "expo-router",

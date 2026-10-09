@@ -1380,6 +1380,11 @@ isOneToOne: false
 "parse_pass_code":
 { Args: { "p_code": string }; Returns: Record<string, unknown>
                            },
+"recent_scans":
+{ Args: { "p_limit"?: number,"p_venue_id": string }; Returns: {
+              "created_at": string,"id": number,"kind": string,"result": Database["public"]['Enums']["scan_result"],"username": string
+            }[]
+                           },
 "redeem_offer":
 { Args: { "p_code": string,"p_deal_id": string,"p_venue_id": string }; Returns: {
               "result": Database["public"]['Enums']["scan_result"],"username": string
