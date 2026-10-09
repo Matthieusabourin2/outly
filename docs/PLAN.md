@@ -39,6 +39,19 @@ Tableau de bord **en lecture** : inscrits, venus, % classic, scans ratés, en di
 ### 5. Mise en ligne
 Supabase Pro (région Sydney) · Cloudflare Pages (`domaine`, `staff.domaine`, `admin.domaine`) · Resend (emails) · Google Cloud (bouton Google) · fonction serveur de suppression de compte.
 
+## Avancement (branche `slice/1-rouge`, PR #4)
+
+| Chantier | État |
+|---|---|
+| Base de données (migration 0002, 36 tests) | ✅ fait |
+| Comptes de démo locaux (`pnpm db:seed-users`) | ✅ fait |
+| Site client : inscription, code par email, profil 18+, soirée, guest list, fantôme/classique, signaler/bloquer, pass QR, suppression de compte, pages légales | ✅ fait, testé dans Chrome |
+| Site équipe : connexion, onglets par rôle, scan porte, scan bar, compteurs | ✅ fait, testé dans Chrome avec une fausse caméra |
+| Tableau de bord admin | ⏳ Tondal775 (fonctions prêtes : `venue_live_stats`, `venue_activity`, `recent_scans`) |
+| Mise en ligne (domaine, Supabase Pro, Cloudflare, Resend, Google) | ⛔ en attente des achats des CEO |
+| Test du scan sur de vrais téléphones | ⛔ demande la mise en ligne (la caméra exige HTTPS) |
+| Contenu de Rouge (line-up, comptes des vigiles) | ⛔ en attente des infos |
+
 ## Planning
 
 | Dates | Travail |
