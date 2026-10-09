@@ -266,8 +266,9 @@ begin
   if not has_venue_role(p_venue_id, array['venue_owner','venue_manager','venue_staff']::venue_role[]) then
     raise exception 'OUTLY_FORBIDDEN';
   end if;
+  -- Only offers made through Outly can be redeemed with an Outly pass (CLAUDE.md rule 4).
   select * into d from deals where id = p_deal_id and venue_id = p_venue_id
-     and content_visible(status, source, verified_at);
+     and source in ('outly_partner','demo') and content_visible(status, source, verified_at);
   if not found then raise exception 'OUTLY_NOT_FOUND'; end if;
 
   select * into code from parse_pass_code(p_code);

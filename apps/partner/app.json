@@ -35,6 +35,15 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 160
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Outly Staff uses the camera to scan guest passes at the door.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
       ]
     ],
     "scheme": "outly-partner",

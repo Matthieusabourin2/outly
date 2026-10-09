@@ -20,6 +20,7 @@ export const OUTLY_ERROR_MESSAGES = {
   OUTLY_NOT_CANCELLABLE: "This booking can't be cancelled any more.",
   OUTLY_QR_USED_OR_INVALID: 'This pass has already been used or is not valid.',
   OUTLY_WRONG_NIGHT: 'This pass is for a different night.',
+  OUTLY_DELETE_FAILED: "We couldn't delete your account. Please try again, or contact Outly support.",
 } as const;
 
 export type OutlyErrorCode = keyof typeof OUTLY_ERROR_MESSAGES;
