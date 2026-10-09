@@ -16,7 +16,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "env:local": "node scripts/env-local.mjs",
-    "db:start": "supabase start",
+    "db:start": "node scripts/db-start.mjs",
     "db:stop": "supabase stop"
   },
   "devDependencies": {
