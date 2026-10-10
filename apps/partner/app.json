@@ -21,7 +21,11 @@
       "package": "com.outly.partner"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Outly Staff",
+      "backgroundColor": "#0B0B1E",
+      "themeColor": "#0B0B1E"
     },
     "plugins": [
       "expo-router",
@@ -34,6 +38,15 @@
           "backgroundColor": "#0B0B1E",
           "image": "./assets/splash-icon.png",
           "imageWidth": 160
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Outly Staff uses the camera to scan guest passes at the door.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
         }
       ]
     ],

@@ -30,3 +30,12 @@ jobs:
       - run: pip install pgserver
       - name: Migrations + demo seed + RLS smoke tests
         run: python3 supabase/tests/run_local.py
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # whole history, every commit of the PR
+      - name: Scan for leaked secrets (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git --redact --no-banner /repo

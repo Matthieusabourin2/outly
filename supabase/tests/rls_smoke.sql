@@ -94,6 +94,9 @@ rollback;
 
 -- T5: guest list booking, capacity, partner-only, check-in with single-use nonce
 begin;
+-- The demo list closes at 22:00 Sydney: reopen it for this (rolled-back) test so it passes at any hour.
+select pg_temp.as_service();
+update guest_lists set closes_at = null where venue_id = '00000000-0000-4000-a000-000000000001';
 select pg_temp.as_user('11111111-1111-4111-a111-111111111111');
 do $$ declare b bookings; gl uuid; begin
   select id into gl from guest_lists where venue_id = '00000000-0000-4000-a000-000000000001' limit 1;

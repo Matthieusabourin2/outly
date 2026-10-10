@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { GENERIC_ERROR_MESSAGE, OUTLY_ERROR_MESSAGES, getOutlyErrorCode, toUserMessage } from './errors';
@@ -7,7 +7,10 @@ const migrationsDir = fileURLToPath(new URL('../../../supabase/migrations/', imp
 
 describe('OUTLY_* error mapping', () => {
   it('has a message for every code raised in migrations', () => {
-    const sql = readFileSync(`${migrationsDir}0001_init.sql`, 'utf8');
+    const sql = readdirSync(migrationsDir)
+      .filter((f) => f.endsWith('.sql'))
+      .map((f) => readFileSync(`${migrationsDir}${f}`, 'utf8'))
+      .join('\n');
     const codes = new Set(sql.match(/OUTLY_[A-Z0-9_]+/g));
     for (const code of codes) expect(OUTLY_ERROR_MESSAGES).toHaveProperty(code);
   });

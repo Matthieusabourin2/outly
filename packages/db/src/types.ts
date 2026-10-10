@@ -205,13 +205,13 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "checked_in_at": string | null,"checked_in_by": string | null,"created_at": string,"decided_at": string | null,"decided_by": string | null,"expires_at": string | null,"guest_list_id": string | null,"id": string,"party_size": number,"qr_nonce": string,"special_requests": string | null,"squad_id": string | null,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"type": Database["public"]['Enums']["booking_type"],"updated_at": string,"user_id": string,"venue_id": string
+                    "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],"checked_in_at": string | null,"checked_in_by": string | null,"created_at": string,"decided_at": string | null,"decided_by": string | null,"expires_at": string | null,"guest_list_id": string | null,"id": string,"party_size": number,"qr_nonce": string,"special_requests": string | null,"squad_id": string | null,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"type": Database["public"]['Enums']["booking_type"],"updated_at": string,"user_id": string,"venue_id": string
                   }
                   Insert: {
-                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"expires_at"?: string | null,"guest_list_id"?: string | null,"id"?: string,"party_size": number,"qr_nonce"?: string,"special_requests"?: string | null,"squad_id"?: string | null,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"type": Database["public"]['Enums']["booking_type"],"updated_at"?: string,"user_id": string,"venue_id": string
+                    "attendee_visibility"?: Database["public"]['Enums']["attendee_visibility"],"checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"expires_at"?: string | null,"guest_list_id"?: string | null,"id"?: string,"party_size": number,"qr_nonce"?: string,"special_requests"?: string | null,"squad_id"?: string | null,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"type": Database["public"]['Enums']["booking_type"],"updated_at"?: string,"user_id": string,"venue_id": string
                   }
                   Update: {
-                    "checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"expires_at"?: string | null,"guest_list_id"?: string | null,"id"?: string,"party_size"?: number,"qr_nonce"?: string,"special_requests"?: string | null,"squad_id"?: string | null,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"type"?: Database["public"]['Enums']["booking_type"],"updated_at"?: string,"user_id"?: string,"venue_id"?: string
+                    "attendee_visibility"?: Database["public"]['Enums']["attendee_visibility"],"checked_in_at"?: string | null,"checked_in_by"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"expires_at"?: string | null,"guest_list_id"?: string | null,"id"?: string,"party_size"?: number,"qr_nonce"?: string,"special_requests"?: string | null,"squad_id"?: string | null,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"type"?: Database["public"]['Enums']["booking_type"],"updated_at"?: string,"user_id"?: string,"venue_id"?: string
                   }
                   Relationships: [
                     {
@@ -341,6 +341,25 @@ isOneToOne: false
       columns: ["venue_id"]
 isOneToOne: false
       referencedRelation: "venues"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"event_sets": {
+                  Row: {
+                    "artist_name": string,"created_at": string,"ends_at": string | null,"event_id": string,"id": string,"sort": number,"stage": string | null,"starts_at": string | null
+                  }
+                  Insert: {
+                    "artist_name": string,"created_at"?: string,"ends_at"?: string | null,"event_id": string,"id"?: string,"sort"?: number,"stage"?: string | null,"starts_at"?: string | null
+                  }
+                  Update: {
+                    "artist_name"?: string,"created_at"?: string,"ends_at"?: string | null,"event_id"?: string,"id"?: string,"sort"?: number,"stage"?: string | null,"starts_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_sets_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
       referencedColumns: ["id"]
     }
                   ]
@@ -502,6 +521,61 @@ isOneToOne: false
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "public_profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"offer_redemptions": {
+                  Row: {
+                    "booking_id": string,"created_at": string,"deal_id": string,"id": number,"redeemed_by": string | null,"user_id": string,"venue_id": string
+                  }
+                  Insert: {
+                    "booking_id": string,"created_at"?: string,"deal_id": string,"id"?: never,"redeemed_by"?: string | null,"user_id": string,"venue_id": string
+                  }
+                  Update: {
+                    "booking_id"?: string,"created_at"?: string,"deal_id"?: string,"id"?: never,"redeemed_by"?: string | null,"user_id"?: string,"venue_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "offer_redemptions_booking_id_fkey"
+      columns: ["booking_id"]
+isOneToOne: false
+      referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "offer_redemptions_deal_id_fkey"
+      columns: ["deal_id"]
+isOneToOne: false
+      referencedRelation: "deals"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "offer_redemptions_redeemed_by_fkey"
+      columns: ["redeemed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "offer_redemptions_redeemed_by_fkey"
+      columns: ["redeemed_by"]
+isOneToOne: false
+      referencedRelation: "public_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "offer_redemptions_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "offer_redemptions_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "public_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "offer_redemptions_venue_id_fkey"
+      columns: ["venue_id"]
+isOneToOne: false
+      referencedRelation: "venues"
       referencedColumns: ["id"]
     }
                   ]
@@ -772,6 +846,61 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "saved_venues_venue_id_fkey"
+      columns: ["venue_id"]
+isOneToOne: false
+      referencedRelation: "venues"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scan_events": {
+                  Row: {
+                    "booking_id": string | null,"created_at": string,"deal_id": string | null,"guest_list_id": string | null,"id": number,"kind": string,"result": Database["public"]['Enums']["scan_result"],"scanned_by": string,"venue_id": string
+                  }
+                  Insert: {
+                    "booking_id"?: string | null,"created_at"?: string,"deal_id"?: string | null,"guest_list_id"?: string | null,"id"?: never,"kind"?: string,"result": Database["public"]['Enums']["scan_result"],"scanned_by": string,"venue_id": string
+                  }
+                  Update: {
+                    "booking_id"?: string | null,"created_at"?: string,"deal_id"?: string | null,"guest_list_id"?: string | null,"id"?: never,"kind"?: string,"result"?: Database["public"]['Enums']["scan_result"],"scanned_by"?: string,"venue_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scan_events_booking_id_fkey"
+      columns: ["booking_id"]
+isOneToOne: false
+      referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scan_events_deal_id_fkey"
+      columns: ["deal_id"]
+isOneToOne: false
+      referencedRelation: "deals"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scan_events_guest_list_id_fkey"
+      columns: ["guest_list_id"]
+isOneToOne: false
+      referencedRelation: "guest_list_usage"
+      referencedColumns: ["guest_list_id"]
+    },{
+      foreignKeyName: "scan_events_guest_list_id_fkey"
+      columns: ["guest_list_id"]
+isOneToOne: false
+      referencedRelation: "guest_lists"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scan_events_scanned_by_fkey"
+      columns: ["scanned_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scan_events_scanned_by_fkey"
+      columns: ["scanned_by"]
+isOneToOne: false
+      referencedRelation: "public_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scan_events_venue_id_fkey"
       columns: ["venue_id"]
 isOneToOne: false
       referencedRelation: "venues"
@@ -1059,9 +1188,13 @@ isOneToOne: false
 "can_see_activity":
 { Args: { "owner": string }; Returns: boolean
                            },
+"can_see_venue_stats":
+{ Args: { "v": string }; Returns: boolean
+                           },
 "cancel_booking":
 { Args: { "p_booking_id": string }; Returns: {
-              "checked_in_at": string | null,
+              "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
+"checked_in_at": string | null,
 "checked_in_by": string | null,
 "created_at": string,
 "decided_at": string | null,
@@ -1088,7 +1221,8 @@ isOneToOne: false
       } },
 "check_in":
 { Args: { "p_booking_id": string,"p_nonce": string }; Returns: {
-              "checked_in_at": string | null,
+              "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
+"checked_in_at": string | null,
 "checked_in_by": string | null,
 "created_at": string,
 "decided_at": string | null,
@@ -1118,7 +1252,8 @@ isOneToOne: false
                            },
 "decide_booking":
 { Args: { "p_accept": boolean,"p_booking_id": string }; Returns: {
-              "checked_in_at": string | null,
+              "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
+"checked_in_at": string | null,
 "checked_in_by": string | null,
 "created_at": string,
 "decided_at": string | null,
@@ -1143,8 +1278,18 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"event_attendees":
+{ Args: { "p_guest_list_id": string }; Returns: {
+              "user_id": string,"username": string
+            }[]
+                           },
 "expire_and_no_show":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"guest_list_stats":
+{ Args: { "p_guest_list_id": string }; Returns: {
+              "capacity": number,"joined": number,"remaining": number
+            }[]
                            },
 "has_venue_role":
 { Args: { "roles": (Database["public"]['Enums']["venue_role"])[],"v": string }; Returns: boolean
@@ -1170,12 +1315,16 @@ isOneToOne: false
 "is_squad_member":
 { Args: { "s": string }; Returns: boolean
                            },
+"is_suspended":
+{ Args: { "u": string }; Returns: boolean
+                           },
 "is_venue_member":
 { Args: { "v": string }; Returns: boolean
                            },
-"join_guest_list":
-{ Args: { "p_guest_list_id": string,"p_party_size": number,"p_squad_id"?: string }; Returns: {
-              "checked_in_at": string | null,
+"join_event_list":
+{ Args: { "p_guest_list_id": string,"p_visibility"?: Database["public"]['Enums']["attendee_visibility"] }; Returns: {
+              "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
+"checked_in_at": string | null,
 "checked_in_by": string | null,
 "created_at": string,
 "decided_at": string | null,
@@ -1200,9 +1349,10 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
-"request_table":
-{ Args: { "p_note"?: string,"p_party_size": number,"p_squad_id"?: string,"p_starts_at": string,"p_venue_id": string }; Returns: {
-              "checked_in_at": string | null,
+"join_guest_list":
+{ Args: { "p_guest_list_id": string,"p_party_size": number,"p_squad_id"?: string }; Returns: {
+              "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
+"checked_in_at": string | null,
 "checked_in_by": string | null,
 "created_at": string,
 "decided_at": string | null,
@@ -1226,10 +1376,97 @@ isOneToOne: false
         to: "bookings"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"parse_pass_code":
+{ Args: { "p_code": string }; Returns: Record<string, unknown>
+                           },
+"recent_scans":
+{ Args: { "p_limit"?: number,"p_venue_id": string }; Returns: {
+              "created_at": string,"id": number,"kind": string,"result": Database["public"]['Enums']["scan_result"],"username": string
+            }[]
+                           },
+"redeem_offer":
+{ Args: { "p_code": string,"p_deal_id": string,"p_venue_id": string }; Returns: {
+              "result": Database["public"]['Enums']["scan_result"],"username": string
+            }[]
+                           },
+"request_table":
+{ Args: { "p_note"?: string,"p_party_size": number,"p_squad_id"?: string,"p_starts_at": string,"p_venue_id": string }; Returns: {
+              "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
+"checked_in_at": string | null,
+"checked_in_by": string | null,
+"created_at": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"expires_at": string | null,
+"guest_list_id": string | null,
+"id": string,
+"party_size": number,
+"qr_nonce": string,
+"special_requests": string | null,
+"squad_id": string | null,
+"starts_at": string,
+"status": Database["public"]['Enums']["booking_status"],
+"type": Database["public"]['Enums']["booking_type"],
+"updated_at": string,
+"user_id": string,
+"venue_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "bookings"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"scan_pass":
+{ Args: { "p_code": string,"p_venue_id": string }; Returns: {
+              "booking_id": string,"checked_in_at": string,"result": Database["public"]['Enums']["scan_result"],"username": string
+            }[]
+                           },
+"set_attendee_visibility":
+{ Args: { "p_booking_id": string,"p_visibility": Database["public"]['Enums']["attendee_visibility"] }; Returns: {
+              "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
+"checked_in_at": string | null,
+"checked_in_by": string | null,
+"created_at": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"expires_at": string | null,
+"guest_list_id": string | null,
+"id": string,
+"party_size": number,
+"qr_nonce": string,
+"special_requests": string | null,
+"squad_id": string | null,
+"starts_at": string,
+"status": Database["public"]['Enums']["booking_status"],
+"type": Database["public"]['Enums']["booking_type"],
+"updated_at": string,
+"user_id": string,
+"venue_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "bookings"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"sydney_night":
+{ Args: { "ts": string }; Returns: string
+                           },
+"venue_activity":
+{ Args: { "p_bucket_minutes"?: number,"p_guest_list_id": string }; Returns: {
+              "bucket_start": string,"check_ins": number,"joins": number,"scans_failed": number
+            }[]
+                           },
+"venue_live_stats":
+{ Args: { "p_night"?: string,"p_venue_id": string }; Returns: {
+              "capacity": number,"checked_in": number,"classic_count": number,"ghost_count": number,"guest_list_id": string,"joined": number,"last_scan_at": string,"scans_failed": number,"scans_ok": number
+            }[]
+                           }
           }
           Enums: {
-            "activity_visibility": "off"|"selected","ai_surface": "customer"|"partner"|"admin","booking_status": "pending"|"confirmed"|"declined"|"expired"|"cancelled"|"checked_in"|"no_show","booking_type": "guest_list"|"table_request"|"instant","campaign_status": "draft"|"approved"|"scheduled"|"sent"|"cancelled","content_source": "public_listing"|"outly_partner"|"demo","content_status": "draft"|"pending_review"|"scheduled"|"active"|"expired"|"archived"|"rejected","friendship_status": "pending"|"accepted","outly_role": "outly_admin"|"outly_marketing"|"outly_partnerships"|"outly_events"|"outly_support","partner_status": "listed"|"pending"|"partner"|"inactive","payment_req_status": "open"|"partially_paid"|"paid"|"expired"|"cancelled"|"refunded","report_status": "open"|"actioned"|"dismissed","share_status": "requested"|"paid"|"declined"|"expired"|"refunded","tier_name": "bronze"|"silver"|"gold"|"platinum","venue_role": "venue_owner"|"venue_manager"|"venue_staff"|"venue_door"
+            "activity_visibility": "off"|"selected","ai_surface": "customer"|"partner"|"admin","attendee_visibility": "ghost"|"classic","booking_status": "pending"|"confirmed"|"declined"|"expired"|"cancelled"|"checked_in"|"no_show","booking_type": "guest_list"|"table_request"|"instant","campaign_status": "draft"|"approved"|"scheduled"|"sent"|"cancelled","content_source": "public_listing"|"outly_partner"|"demo","content_status": "draft"|"pending_review"|"scheduled"|"active"|"expired"|"archived"|"rejected","friendship_status": "pending"|"accepted","outly_role": "outly_admin"|"outly_marketing"|"outly_partnerships"|"outly_events"|"outly_support","partner_status": "listed"|"pending"|"partner"|"inactive","payment_req_status": "open"|"partially_paid"|"paid"|"expired"|"cancelled"|"refunded","report_status": "open"|"actioned"|"dismissed","scan_result": "ok"|"already_used"|"invalid"|"wrong_night"|"not_confirmed"|"forbidden","share_status": "requested"|"paid"|"declined"|"expired"|"refunded","tier_name": "bronze"|"silver"|"gold"|"platinum","venue_role": "venue_owner"|"venue_manager"|"venue_staff"|"venue_door"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1349,7 +1586,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "activity_visibility": ["off", "selected"],"ai_surface": ["customer", "partner", "admin"],"booking_status": ["pending", "confirmed", "declined", "expired", "cancelled", "checked_in", "no_show"],"booking_type": ["guest_list", "table_request", "instant"],"campaign_status": ["draft", "approved", "scheduled", "sent", "cancelled"],"content_source": ["public_listing", "outly_partner", "demo"],"content_status": ["draft", "pending_review", "scheduled", "active", "expired", "archived", "rejected"],"friendship_status": ["pending", "accepted"],"outly_role": ["outly_admin", "outly_marketing", "outly_partnerships", "outly_events", "outly_support"],"partner_status": ["listed", "pending", "partner", "inactive"],"payment_req_status": ["open", "partially_paid", "paid", "expired", "cancelled", "refunded"],"report_status": ["open", "actioned", "dismissed"],"share_status": ["requested", "paid", "declined", "expired", "refunded"],"tier_name": ["bronze", "silver", "gold", "platinum"],"venue_role": ["venue_owner", "venue_manager", "venue_staff", "venue_door"]
+            "activity_visibility": ["off", "selected"],"ai_surface": ["customer", "partner", "admin"],"attendee_visibility": ["ghost", "classic"],"booking_status": ["pending", "confirmed", "declined", "expired", "cancelled", "checked_in", "no_show"],"booking_type": ["guest_list", "table_request", "instant"],"campaign_status": ["draft", "approved", "scheduled", "sent", "cancelled"],"content_source": ["public_listing", "outly_partner", "demo"],"content_status": ["draft", "pending_review", "scheduled", "active", "expired", "archived", "rejected"],"friendship_status": ["pending", "accepted"],"outly_role": ["outly_admin", "outly_marketing", "outly_partnerships", "outly_events", "outly_support"],"partner_status": ["listed", "pending", "partner", "inactive"],"payment_req_status": ["open", "partially_paid", "paid", "expired", "cancelled", "refunded"],"report_status": ["open", "actioned", "dismissed"],"scan_result": ["ok", "already_used", "invalid", "wrong_night", "not_confirmed", "forbidden"],"share_status": ["requested", "paid", "declined", "expired", "refunded"],"tier_name": ["bronze", "silver", "gold", "platinum"],"venue_role": ["venue_owner", "venue_manager", "venue_staff", "venue_door"]
           }
         }
 } as const

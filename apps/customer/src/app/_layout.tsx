@@ -11,11 +11,42 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { AuthProvider, useAuth } from '@/lib/auth';
 
 void SplashScreen.preventAutoHideAsync();
 
+function RootStack() {
+  const { ready, session, profile } = useAuth();
+
+  useEffect(() => {
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
+
+  const signedIn = !!session;
+  const hasProfile = signedIn && !!profile;
+
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack.Protected guard={!signedIn}>
+        <Stack.Screen name="sign-in" />
+      </Stack.Protected>
+      <Stack.Protected guard={signedIn && !hasProfile}>
+        <Stack.Screen name="profile-setup" />
+      </Stack.Protected>
+      <Stack.Protected guard={hasProfile}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+      <Stack.Screen name="reset-password" />
+      <Stack.Screen name="privacy" />
+      <Stack.Screen name="terms" />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
@@ -23,16 +54,12 @@ export default function RootLayout() {
     PlusJakartaSans_800ExtraBold,
   });
 
-  useEffect(() => {
-    if (loaded || error) void SplashScreen.hideAsync();
-  }, [loaded, error]);
-
-  if (!loaded && !error) return null;
+  if (!fontsLoaded && !fontError) return null;
 
   return (
-    <>
+    <AuthProvider>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
-    </>
+      <RootStack />
+    </AuthProvider>
   );
 }

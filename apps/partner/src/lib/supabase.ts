@@ -1,8 +1,9 @@
 import 'react-native-url-polyfill/auto';
-import 'expo-sqlite/localStorage/install';
+import './storage';
 import { createClient } from '@supabase/supabase-js';
 import type { Database, OutlyClient } from '@outly/db';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 const rawUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const publishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -12,10 +13,11 @@ if (!rawUrl || !publishableKey) {
 }
 
 /**
- * Local dev: 127.0.0.1 only works in the iOS simulator. On a real phone (Expo Go),
- * reuse the Mac's LAN address that Metro is already served from.
+ * Local dev on a real phone (Expo Go): 127.0.0.1 is the phone itself, so reuse the
+ * Mac's LAN address that Metro is served from. Web and hosted URLs are untouched.
  */
 function resolveDevUrl(url: string): string {
+  if (Platform.OS === 'web') return url;
   const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
   if (!devHost) return url;
   return url.replace(/\/\/(127\.0\.0\.1|localhost)(?=[:/]|$)/, `//${devHost}`);
@@ -26,18 +28,8 @@ export const supabase: OutlyClient = createClient<Database>(resolveDevUrl(rawUrl
     storage: localStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // Web: pick up the session from password-reset links.
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });
 
-/**
- * SLICE 0 ONLY. RLS lets only signed-in users read venues, and real sign-in arrives in slice 1.
- * Until then the shell signs in anonymously (enabled in local supabase/config.toml only).
- * Remove this together with `enable_anonymous_sign_ins` in slice 1.
- */
-export async function ensureDevSession(): Promise<void> {
-  const { data } = await supabase.auth.getSession();
-  if (data.session) return;
-  const { error } = await supabase.auth.signInAnonymously();
-  if (error) throw error;
-}

@@ -34,6 +34,10 @@ export const colors = {
   info: '#38BDF8',
   rating: '#FACC15',
 
+  // QR codes need maximum contrast on a white quiet zone, in every theme
+  qrLight: '#FFFFFF',
+  qrDark: '#0B0B1E',
+
   // Deal source labels (D5) — must always be visible on a deal
   sourceOutlyPartner: '#A78BFA', // "Outly deal"
   sourcePublicListing: '#94A3B8',// "Venue offer · check with venue"

@@ -1,11 +1,11 @@
 # Outly — instructions for Claude Code
 
 Outly is a Sydney going-out app: three products (customer app, partner venue app, admin platform) on one Supabase backend.
-**Read `docs/SPEC.md` before any work.** It is the source of truth; decisions D1–D12 are settled. Do not reopen them silently — if something in the spec seems wrong, stop and say so, and record changes in the "Amendments" section of the spec.
+**Read `docs/SPEC.md` (including the Amendments section) and `docs/PLAN.md` (current plan, deadlines, who does what) before any work.** It is the source of truth; decisions D1–D12 are settled. Do not reopen them silently — if something in the spec seems wrong, stop and say so, and record changes in the "Amendments" section of the spec.
 
 ## Stack
 - pnpm workspaces + Turborepo, TypeScript strict everywhere.
-- `apps/customer`, `apps/partner`: Expo (latest stable SDK) + Expo Router. Dark theme only.
+- `apps/customer`, `apps/partner`: Expo (latest stable SDK) + Expo Router. Dark theme only. **Shipped as websites (Expo web) for the 24 Oct launch**, native store builds by 8 Nov (SPEC A2, A3).
 - `apps/admin`: Next.js App Router + Tailwind + shadcn/ui.
 - `packages/ui` (tokens + RN components), `packages/core` (zod schemas, business rules), `packages/db` (generated Supabase types).
 - `supabase/`: migrations, Edge Functions (Deno), seed, tests.
@@ -33,12 +33,25 @@ Outly is a Sydney going-out app: three products (customer app, partner venue app
 - The mockup boards are mood references, not pixel specs; where they conflict with the spec, the spec wins (e.g. tab bars, Live Orders cut, no Facebook login, no testimonials in-app).
 - Keep copy in English (Australian spelling: "favourite", "personalise").
 
-## Commands (to be wired up in slice 0)
+## Commands
 - `pnpm dev:customer` / `pnpm dev:partner` / `pnpm dev:admin`
+- `pnpm db:start` / `pnpm db:stop` — local Supabase (Docker)
 - `pnpm db:reset` — reset local Supabase and apply migrations + demo seed
-- `pnpm db:test` — run `supabase/tests/*.sql`
-- `pnpm db:types` — `supabase gen types typescript --local > packages/db/src/types.ts`
+- `pnpm env:local` — write `apps/*/.env.local` from the running local Supabase
+- `pnpm db:test` — migrations + seed + RLS smoke tests on a throwaway Postgres (no Docker)
+- `pnpm db:types` — regenerate `packages/db/src/types.ts`
 - `pnpm typecheck`, `pnpm lint`, `pnpm test`
+
+## Déploiement
+- **Le déploiement passe uniquement par GitHub.** N'utilise jamais la CLI `vercel` ni le MCP Vercel : l'utilisateur n'a pas de compte Vercel, c'est normal.
+- **Seule l'app `apps/admin` est déployée sur Vercel.**
+- **« Mets en preview »** : commit les changements, pousse sur la branche en cours (**jamais sur `main`**) et ouvre une PR vers `main` s'il n'y en a pas. Attends le statut Vercel avec `gh pr checks --watch`. Puis donne l'URL de preview :
+  ```
+  gh api "repos/Matthieusabourin2/outly/deployments?sha=$(git rev-parse HEAD)" --jq '.[0].id'
+  gh api repos/Matthieusabourin2/outly/deployments/<id>/statuses --jq '.[0].environment_url'
+  ```
+- **« Mets en prod »** : vérifie que tous les checks de la PR sont verts, fusionne-la dans `main` avec `gh pr merge --squash`, attends le statut Vercel du commit sur `main`, puis confirme que https://outly-matts-projects-dd825cfb.vercel.app répond.
+- **Si Vercel échoue** : l'utilisateur n'a pas accès aux logs Vercel. Lance `pnpm --filter @outly/admin build` en local pour retrouver l'erreur, corrige-la et repousse.
 
 ## Error codes
 SQL functions raise `OUTLY_*` codes (e.g. `OUTLY_LIST_FULL`, `OUTLY_NOT_PARTNER`, `OUTLY_UNDER_18`). Map them to user-facing messages in `packages/core/src/errors.ts`; never show raw SQL errors.

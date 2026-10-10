@@ -1,7 +1,12 @@
 node_modules/
-.env
-.env.*
+# Secrets: every env file at any depth is ignored; only the committed templates are allowed.
+.env*
 !.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+signing_keys.json
 .expo/
 .next/
 dist/
