@@ -43,10 +43,15 @@ Outly is a Sydney going-out app: three products (customer app, partner venue app
 - `pnpm typecheck`, `pnpm lint`, `pnpm test`
 
 ## Déploiement
-- **Never use the Vercel CLI (`vercel …`) or the Vercel MCP** — no install, no login, no deploy command.
-- Vercel is connected to the GitHub repo and deploys by itself on every `git push`: a **branch → preview**, **`main` → production**.
-- To deploy: push the branch (preview), or get the PR merged into `main` (production — merging is the user's call, never done without their OK).
-- To check a deployment: `gh pr checks <number>`, or the commit status on GitHub (`gh api repos/Matthieusabourin2/outly/commits/<sha>/statuses`).
+- **Le déploiement passe uniquement par GitHub.** N'utilise jamais la CLI `vercel` ni le MCP Vercel : l'utilisateur n'a pas de compte Vercel, c'est normal.
+- **Seule l'app `apps/admin` est déployée sur Vercel.**
+- **« Mets en preview »** : commit les changements, pousse sur la branche en cours (**jamais sur `main`**) et ouvre une PR vers `main` s'il n'y en a pas. Attends le statut Vercel avec `gh pr checks --watch`. Puis donne l'URL de preview :
+  ```
+  gh api "repos/Matthieusabourin2/outly/deployments?sha=$(git rev-parse HEAD)" --jq '.[0].id'
+  gh api repos/Matthieusabourin2/outly/deployments/<id>/statuses --jq '.[0].environment_url'
+  ```
+- **« Mets en prod »** : vérifie que tous les checks de la PR sont verts, fusionne-la dans `main` avec `gh pr merge --squash`, attends le statut Vercel du commit sur `main`, puis confirme que https://outly-matts-projects-dd825cfb.vercel.app répond.
+- **Si Vercel échoue** : l'utilisateur n'a pas accès aux logs Vercel. Lance `pnpm --filter @outly/admin build` en local pour retrouver l'erreur, corrige-la et repousse.
 
 ## Error codes
 SQL functions raise `OUTLY_*` codes (e.g. `OUTLY_LIST_FULL`, `OUTLY_NOT_PARTNER`, `OUTLY_UNDER_18`). Map them to user-facing messages in `packages/core/src/errors.ts`; never show raw SQL errors.
