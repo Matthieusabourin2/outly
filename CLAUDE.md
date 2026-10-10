@@ -42,5 +42,11 @@ Outly is a Sydney going-out app: three products (customer app, partner venue app
 - `pnpm db:types` — regenerate `packages/db/src/types.ts`
 - `pnpm typecheck`, `pnpm lint`, `pnpm test`
 
+## Déploiement
+- **Never use the Vercel CLI (`vercel …`) or the Vercel MCP** — no install, no login, no deploy command.
+- Vercel is connected to the GitHub repo and deploys by itself on every `git push`: a **branch → preview**, **`main` → production**.
+- To deploy: push the branch (preview), or get the PR merged into `main` (production — merging is the user's call, never done without their OK).
+- To check a deployment: `gh pr checks <number>`, or the commit status on GitHub (`gh api repos/Matthieusabourin2/outly/commits/<sha>/statuses`).
+
 ## Error codes
 SQL functions raise `OUTLY_*` codes (e.g. `OUTLY_LIST_FULL`, `OUTLY_NOT_PARTNER`, `OUTLY_UNDER_18`). Map them to user-facing messages in `packages/core/src/errors.ts`; never show raw SQL errors.
