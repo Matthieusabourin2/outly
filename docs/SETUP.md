@@ -23,10 +23,10 @@ Pas besoin d'installer la CLI Supabase : elle est fournie par le projet (`pnpm i
 
 ## 2. Récupérer le projet
 
-Il faut d'abord avoir été ajouté au dépôt GitHub `gabrielsabourin1-netizen/outly` (demande à Gabriel).
+Il faut d'abord avoir été ajouté au dépôt GitHub `Matthieusabourin2/outly` (demande à Gabriel).
 
 ```
-git clone https://github.com/gabrielsabourin1-netizen/outly.git
+git clone https://github.com/Matthieusabourin2/outly.git
 cd outly
 pnpm install
 ```
