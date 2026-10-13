@@ -41,6 +41,7 @@
 | **Personnel limité au strict nécessaire** | Vigiles et barmans ne lisent ni les réservations ni les codes des pass : ils passent par `scan_pass` / `redeem_offer` | 0003 (H4), test H4 |
 | **Journal de tous les scans** | Chaque scan, réussi ou refusé, est enregistré (qui, quand, résultat) | `scan_events`, tests R8/R9 |
 | **Colonnes commerciales masquées** | Commission et compte Stripe illisibles par l'API ; seuls managers et équipe Outly les lisent via une fonction | 0003 (H5), tests H5 |
+| **CAPTCHA anti-robots (prêt, à activer)** | Cloudflare Turnstile sur inscription, connexion, code email et mot de passe oublié ; jeton à usage unique, widget réinitialisé après chaque tentative ; **sans clé configurée, le site marche comme avant** | Testé en local avec les clés de test officielles : inscription OK avec un CAPTCHA valide, **compte refusé quand le serveur rejette le CAPTCHA**, **appel direct à l'API sans CAPTCHA refusé** |
 | **Connexion durcie** | Mots de passe 8+ caractères avec lettres et chiffres ; codes email valables 10 min ; 1 email d'authentification par minute et par personne ; changement de mot de passe après reconnexion récente | `supabase/config.toml`, vérifié sur la base locale |
 | **Suppression de compte** | Par la personne elle-même, depuis son profil ; fonction serveur qui n'accepte que les sites Outly (`ALLOWED_ORIGINS`) et une session valide | `supabase/functions/delete-account` |
 | **Aucun secret dans le code ni dans l'historique** | Fichiers `.env*` ignorés ; analyse gitleaks de tout l'historique à chaque PR | CI « secrets » |
@@ -52,7 +53,7 @@
 
 | Risque | Gravité | Ce qu'on propose | Qui décide |
 |---|---|---|---|
-| **Un robot remplit les 200 places de la guest list** | **Haute** pour Rouge | CAPTCHA invisible **Cloudflare Turnstile** à l'inscription (gratuit, géré par Supabase). Le réglage est prêt dans `config.toml` ; il faut un compte Cloudflare | CEO |
+| **Un robot remplit les 200 places de la guest list** | **Haute** pour Rouge | CAPTCHA **Cloudflare Turnstile** : **codé et testé** (inscription, connexion, code email, mot de passe oublié). Il ne manque que le compte Cloudflare (gratuit) pour obtenir les vraies clés — voir § 5 | CEO |
 | **Limite d'inscriptions par adresse IP** : 30 / 5 min. Au club, des centaines d'invités partagent **une seule IP** (Wi-Fi du club, 4G) → les vrais invités seraient bloqués | **Haute** le soir même | Relever `sign_in_sign_ups` en production pour la soirée (ex. 300 / 5 min) **et** activer le CAPTCHA | Équipe tech |
 | Téléphone de vigile perdu ou volé | Moyenne | Un compte par personne, mot de passe fort, comptes désactivés après la soirée ; le vigile ne peut que scanner | Équipe tech + managers |
 | Harcèlement via la liste des participants | Moyenne | Mode fantôme par défaut, pseudos seulement, bloquer / signaler, suspension par l'équipe Outly ; quelqu'un de l'équipe doit **surveiller les signalements le soir même** | CEO |
@@ -70,7 +71,7 @@
 **Supabase (production)**
 - [ ] Région **Sydney**, offre **Pro** (sauvegardes quotidiennes ; envisager la restauration à la minute près).
 - [ ] Réglages Auth identiques à `supabase/config.toml` : inscriptions anonymes **désactivées**, mots de passe `letters_digits`, codes 10 min, 1 email / minute, changement de mot de passe sécurisé, modèles d'email « code à 6 chiffres ».
-- [ ] **CAPTCHA Turnstile** activé (clé secrète dans Supabase, clé de site dans le site client).
+- [ ] **CAPTCHA Turnstile** activé : créer un widget Turnstile dans Cloudflare (domaines = ceux du site client), mettre la **clé secrète** dans Supabase (*Auth → Bot and Abuse Protection → Turnstile*) et la **clé de site** (publique) dans la variable `EXPO_PUBLIC_TURNSTILE_SITE_KEY` du site client, puis redéployer. Test : une inscription normale passe ; un appel direct à l'API sans CAPTCHA est refusé.
 - [ ] Limites de débit adaptées au soir de Rouge (§ 4).
 - [ ] *Leaked password protection* activée si disponible.
 - [ ] SMTP Resend sur le domaine, avec **SPF, DKIM et DMARC** (sinon les codes finissent en spam, et le domaine peut être usurpé).

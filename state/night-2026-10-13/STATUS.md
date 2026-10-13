@@ -9,7 +9,7 @@
 | B. Tests de bout en bout | ⏳ à lancer | |
 | C. Durcissement des sites | ⏳ à lancer | |
 | D. Audit sécurité base | ✅ fait (avant la nuit) | migration 0003, 47 tests, API sondée, parcours Chrome OK |
-| E. Sécurité transverse | 🟡 en partie fait | fait : SECURITY.md, audit deps + CI, Auth durci, delete-account restreint, contrôle secrets des builds (CI). Reste nuit : CAPTCHA Turnstile, CSP |
+| E. Sécurité transverse | 🟡 presque fait | fait : SECURITY.md, audit deps + CI, Auth durci, delete-account restreint, contrôle secrets des builds (CI). CAPTCHA Turnstile fait et testé. Reste nuit : CSP (doit autoriser challenges.cloudflare.com pour Turnstile : script-src + frame-src) |
 | Relecture adversariale | ⏳ | |
 | Audit sécurité final (diff complet de la nuit) | ⏳ | |
 | Intégration + vérification complète | ⏳ | |
@@ -25,3 +25,4 @@
 - 2026-10-13 — Gabriel insiste sur la cybersécurité : ajout du chantier E (sécurité transverse) et d'un audit sécurité final. `pnpm audit` : 2 hautes + 2 moyennes (3 dans des outils de dev, 1 — decode-uri-component — dans le code livré).
 - 2026-10-13 — chantier E en partie fait par l'orchestrateur (voir tableau). Vérifié : mot de passe faible refusé, 2e code < 1 min refusé, comptes existants OK ; delete-account : 403 pour un autre site, 401 sans session, suppression OK ; check-secrets attrape de fausses clés et laisse passer la clé publique.
 - 2026-10-13 — fait par l'orchestrateur (chantier C, à ne pas refaire) : rafraîchissement mis en pause quand l'onglet est caché / téléphone verrouillé (`startVisiblePolling` dans packages/ui ; mesuré : 0 requête en 35 s onglet caché, rafraîchissement immédiat au retour) ; état « This night is over » sur Night et Pass (`isNightOver` dans core, 3 tests ; vérifié dans Chrome) ; offre masquée après la soirée ; texte de l'offre de démo dédoublonné.
+- 2026-10-13 — CAPTCHA Turnstile fait par l'orchestrateur (customer : Captcha.web.tsx, lib/captcha.ts ; activé par EXPO_PUBLIC_TURNSTILE_SITE_KEY). Testé en local avec les clés de test Cloudflare (config.toml modifié temporairement puis restauré) : inscription OK avec CAPTCHA valide ; site → « Complete the security check » quand le serveur refuse ; API sans jeton refusée ; sans clé, site inchangé. NB : `expo export` réutilise son cache → pour changer une variable EXPO_PUBLIC entre deux builds, vider le cache (`--clear`).

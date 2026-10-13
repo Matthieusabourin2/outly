@@ -4,6 +4,8 @@ import { Button, Screen, Text, TextField, colors, radii, spacing } from '@outly/
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Captcha } from '@/components/Captcha';
+import { CAPTCHA_REQUIRED } from '@/lib/captcha';
 import { GOOGLE_SIGN_IN_ENABLED, authRedirectUrl, supabase } from '@/lib/supabase';
 
 type Mode = 'signup' | 'login' | 'code';
@@ -21,6 +23,7 @@ function authMessage(error: unknown): string {
   if (/password should (be at least|contain)/i.test(message)) return 'Use at least 8 characters, with letters and numbers.';
   if (/only request this after|security purposes/i.test(message)) return 'Wait a minute before asking for another code.';
   if (/token has expired|invalid.*otp|otp.*invalid/i.test(message)) return 'That code is wrong or has expired. Ask for a new one.';
+  if (/captcha/i.test(message)) return 'Complete the security check and try again.';
   if (/rate limit|too many/i.test(message)) return 'Too many attempts. Wait a minute and try again.';
   if (/unable to validate email|invalid email/i.test(message)) return 'Check your email address.';
   return toUserMessage(error);
@@ -35,6 +38,11 @@ export default function SignInScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  // Bot check (Turnstile): each token works once, so the widget is reset after every attempt.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const captchaMissing = CAPTCHA_REQUIRED && !captchaToken;
+  const captcha = captchaToken ? { captchaToken } : {};
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -54,6 +62,7 @@ export default function SignInScreen() {
       setError(authMessage(e));
     } finally {
       setBusy(false);
+      if (CAPTCHA_REQUIRED) setCaptchaReset((n) => n + 1);
     }
   };
 
@@ -62,14 +71,14 @@ export default function SignInScreen() {
       const trimmed = email.trim();
       const { error: e } =
         mode === 'signup'
-          ? await supabase.auth.signUp({ email: trimmed, password })
-          : await supabase.auth.signInWithPassword({ email: trimmed, password });
+          ? await supabase.auth.signUp({ email: trimmed, password, options: { ...captcha } })
+          : await supabase.auth.signInWithPassword({ email: trimmed, password, options: { ...captcha } });
       if (e) throw e;
     });
 
   const sendCode = () =>
     run(async () => {
-      const { error: e } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } });
+      const { error: e } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true, ...captcha } });
       if (e) throw e;
       setCodeSent(true);
       setInfo(`We sent a 6-digit code to ${email.trim()}.`);
@@ -86,6 +95,7 @@ export default function SignInScreen() {
       if (!email.trim()) throw new Error('Enter your email first.');
       const { error: e } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: authRedirectUrl('/reset-password'),
+        ...captcha,
       });
       if (e) throw e;
       setInfo('If an account exists for this email, a reset link is on its way.');
@@ -155,10 +165,10 @@ export default function SignInScreen() {
                 maxLength={6}
               />
               <Button label="Continue" onPress={verifyCode} loading={busy} disabled={code.trim().length !== 6} />
-              <Button label="Send a new code" variant="ghost" onPress={sendCode} disabled={busy} />
+              <Button label="Send a new code" variant="ghost" onPress={sendCode} disabled={busy || captchaMissing} />
             </>
           ) : (
-            <Button label="Email me a code" onPress={sendCode} loading={busy} disabled={!email.trim()} />
+            <Button label="Email me a code" onPress={sendCode} loading={busy} disabled={!email.trim() || captchaMissing} />
           )
         ) : (
           <>
@@ -175,10 +185,12 @@ export default function SignInScreen() {
               label={mode === 'signup' ? 'Create account' : 'Log in'}
               onPress={submitPassword}
               loading={busy}
-              disabled={!email.trim() || (mode === 'signup' ? !isStrongEnough(password) : password.length === 0)}
+              disabled={captchaMissing || !email.trim() || (mode === 'signup' ? !isStrongEnough(password) : password.length === 0)}
             />
           </>
         )}
+
+        <Captcha onToken={setCaptchaToken} resetKey={captchaReset} />
 
         {error ? (
           <Text tone="danger" accessibilityLiveRegion="polite">
@@ -197,7 +209,7 @@ export default function SignInScreen() {
           ) : (
             <Button label="Email me a code instead" variant="ghost" onPress={() => switchMode('code')} />
           )}
-          {mode === 'login' ? <Button label="Forgot password?" variant="ghost" onPress={resetPassword} disabled={busy} /> : null}
+          {mode === 'login' ? <Button label="Forgot password?" variant="ghost" onPress={resetPassword} disabled={busy || captchaMissing} /> : null}
         </View>
       </View>
 
