@@ -1,6 +1,6 @@
 # Sécurité d'Outly
 
-> Pour toute l'équipe (CEO compris) et pour les développeurs. Mis à jour le 13 octobre 2026.
+> Pour toute l'équipe (CEO compris) et pour les développeurs. Mis à jour le 14 octobre 2026 (relecture sécurité indépendante + CSP).
 > Une fuite de données personnelles en Australie peut devoir être **déclarée à l'OAIC et aux personnes touchées** (régime *Notifiable Data Breaches*), en plus du coût en réputation auprès des clubs. Ce document dit ce qu'on protège, contre qui, ce qui est en place, ce qui reste à faire avant la mise en ligne, et quoi faire si quelque chose tourne mal.
 
 ## 1. Ce qu'on protège
@@ -31,7 +31,7 @@
 
 | Protection | Détail | Preuve |
 |---|---|---|
-| **Sécurité par ligne (RLS) sur toutes les tables** | Chaque requête est filtrée par la base selon l'utilisateur, quoi que fasse le site | 47 tests (`pnpm db:test`), CI |
+| **Sécurité par ligne (RLS) sur toutes les tables** | Chaque requête est filtrée par la base selon l'utilisateur, quoi que fasse le site | 56 vérifications (`pnpm db:test`), CI ; sonde de l'API locale (anonyme + compte normal) : 37 tables/vues, 19 fonctions |
 | **Fonctions internes hors de l'API** | 20 fonctions déplacées dans le schéma `private` : impossible de demander « A et B sont-ils amis / bloqués ? » | Migration 0003 (H1), sondes API |
 | **Pseudos seulement** | La liste publique des profils ne montre que `id`, pseudo, avatar ; la liste des participants seulement les pseudos des personnes en mode classique | 0003 (H3), tests R3/H3 |
 | **Mode fantôme par défaut, réciproque** | Invisible = ne voit personne | Tests R2/R3 |
@@ -40,12 +40,15 @@
 | **Pass QR à usage unique** | Code aléatoire non devinable, renouvelé au scan ; une capture d'écran ne passe qu'une fois ; le vigile vérifie aussi le billet | Tests R8, T5 |
 | **Personnel limité au strict nécessaire** | Vigiles et barmans ne lisent ni les réservations ni les codes des pass : ils passent par `scan_pass` / `redeem_offer` | 0003 (H4), test H4 |
 | **Journal de tous les scans** | Chaque scan, réussi ou refusé, est enregistré (qui, quand, résultat) | `scan_events`, tests R8/R9 |
+| **Colonnes protégées sur son propre profil** | Une personne ne peut pas lever sa propre suspension, se déclarer « identité vérifiée », changer son niveau, ses absences ou ses données de parrainage ; seul le support Outly (et le serveur) le peut. Accepter une demande d'ami ne permet pas de changer qui l'a envoyée ; un message ne peut pas être déplacé dans un autre groupe | Migration 0004, tests P1–P3 ; trous reproduits via l'API locale **avant**, refusés **après** (HTTP 400 / 403) |
 | **Colonnes commerciales masquées** | Commission et compte Stripe illisibles par l'API ; seuls managers et équipe Outly les lisent via une fonction | 0003 (H5), tests H5 |
 | **CAPTCHA anti-robots (prêt, à activer)** | Cloudflare Turnstile sur inscription, connexion, code email et mot de passe oublié ; jeton à usage unique, widget réinitialisé après chaque tentative ; **sans clé configurée, le site marche comme avant** | Testé en local avec les clés de test officielles : inscription OK avec un CAPTCHA valide, **compte refusé quand le serveur rejette le CAPTCHA**, **appel direct à l'API sans CAPTCHA refusé** |
 | **Connexion durcie** | Mots de passe 8+ caractères avec lettres et chiffres ; codes email valables 10 min ; 1 email d'authentification par minute et par personne ; changement de mot de passe après reconnexion récente | `supabase/config.toml`, vérifié sur la base locale |
-| **Suppression de compte** | Par la personne elle-même, depuis son profil ; fonction serveur qui n'accepte que les sites Outly (`ALLOWED_ORIGINS`) et une session valide | `supabase/functions/delete-account` |
+| **Suppression de compte** | Par la personne elle-même, depuis son profil ; fonction serveur qui n'accepte que les sites Outly (`ALLOWED_ORIGINS`) et une session valide | `supabase/functions/delete-account` ; sondé en local : sans session → 401, clé publique seule → 401, **session valide depuis un autre site → 403 et compte conservé** |
 | **Aucun secret dans le code ni dans l'historique** | Fichiers `.env*` ignorés ; analyse gitleaks de tout l'historique à chaque PR | CI « secrets » |
-| **Aucun secret dans les sites compilés** | Les deux sites sont compilés en CI puis analysés (clés secrètes, jetons « service_role », variables publiques au nom suspect) | CI « websites », `pnpm check:secrets` |
+| **Aucun secret dans les sites compilés** | Les deux sites sont compilés en CI puis analysés (clés secrètes Supabase / Stripe / Anthropic / Google / Resend, **clé secrète Turnstile**, secret OAuth Google, jetons « service_role », variables publiques au nom suspect) | CI « websites », `pnpm check:secrets` (testé avec de fausses clés : détectées ; la clé de site Turnstile, publique, passe) |
+| **Politique de sécurité du navigateur (CSP)** | Les deux sites n'exécutent que leur propre code (pas de script injecté, pas d'`eval`), ne parlent qu'à Supabase (+ Turnstile pour le site client, + le fichier du lecteur QR pour le site équipe), ne peuvent pas être affichés dans le cadre d'un autre site | `pnpm security:csp` : 18 vérifications dans Chrome, **0 violation** (§ 9) ; `pnpm check:csp` en CI |
+| **CI en lecture seule** | Le jeton GitHub de la CI ne peut que lire le dépôt (`permissions: contents: read`) | `.github/workflows/ci.yml` |
 | **Failles des dépendances surveillées** | La CI échoue sur toute faille haute/critique non justifiée | CI « dependencies », § 6 |
 | **HTTPS obligatoire pour le scan** | La caméra du navigateur ne marche qu'en HTTPS | Hébergement |
 
@@ -59,7 +62,14 @@
 | Harcèlement via la liste des participants | Moyenne | Mode fantôme par défaut, pseudos seulement, bloquer / signaler, suspension par l'équipe Outly ; quelqu'un de l'équipe doit **surveiller les signalements le soir même** | CEO |
 | URL de preview Vercel de l'admin publique | Faible tant que l'admin n'affiche rien sans connexion | Activer la *Deployment Protection* de Vercel sur les previews ; l'admin doit vérifier `outly_staff` côté serveur | Matthieu |
 | Failles connues dans des outils de développement (§ 6) | Faible | Acceptées et suivies ; à retirer dès qu'un correctif sort | Équipe tech |
-| Pas encore de politique de sécurité du navigateur (CSP) | Faible à moyenne | En préparation (testée avec le scanner pour ne pas le casser) | Équipe tech |
+| **Limite d'emails d'authentification** : le réglage local `email_sent = 2` (par heure, **pour tout le projet**) recopié en production bloquerait les codes et liens après 2 emails par heure | **Haute** le soir même | En production, avec Resend : *Auth → Rate Limits → emails* à **500 / heure** au moins pour la soirée ; ne PAS recopier ce réglage local | Équipe tech |
+| **Adresses de retour (redirect URLs) trop larges en production** : la liste locale contient `exp://**` et `http://localhost…/**`. En production, un lien « mot de passe oublié » demandé avec une adresse de retour piégée (`exp://…` vers le serveur d'un attaquant) enverrait la session de la victime à l'attaquant | **Haute** si recopié | En production : *Site URL* = l'adresse du site client ; *Redirect URLs* = **uniquement** `https://<site client>/**` (et plus tard `outly://**` pour l'app native). **Jamais** `exp://**` ni `localhost` | Équipe tech |
+| Savoir si un email a un compte Outly : l'API d'inscription répond « déjà inscrit » (confirmation d'email non bloquante, SPEC A6) et le site l'affiche | Faible | Atténué par le CAPTCHA et les limites de débit ; le fermer vraiment demande d'activer la confirmation d'email (décision produit) | CEO / Gabriel |
+| Tout compte connecté peut lister tous les pseudos (`public_profiles`, sans prénom) | Faible | Conforme à A5 (pseudos seulement) ; à revoir si la recherche d'amis arrive | Gabriel |
+| Surfaces Supabase inutilisées en production : GraphQL (`pg_graphql`, actif par défaut sur un projet hébergé), canaux Realtime publics, schéma OpenAPI lisible avec la clé publique | Faible | Désactiver `pg_graphql` et les canaux Realtime publics (*Realtime → Settings*) s'ils restent inutilisés ; la RLS protège de toute façon les données | Équipe tech |
+| CSP : styles en ligne autorisés (`'unsafe-inline'` dans `style-src`, imposé par React Native Web) ; le lecteur QR de secours télécharge son WebAssembly depuis `fastly.jsdelivr.net` (CDN tiers, version figée) | Faible | Le CSS ne peut pas exécuter de script. Pour supprimer le CDN : héberger `zxing_reader.wasm` sur le site équipe (§ 9) | Équipe tech |
+| Session du personnel : un jeton de rafraîchissement reste valable tant qu'il sert (pas de durée maximale de session) | Moyenne (téléphone volé) | Déconnexion + mot de passe changé + comptes désactivés le lendemain (§ 5) ; *Auth → Sessions → inactivity timeout* (offre Pro) si besoin | Équipe tech |
+| Supprimer (masquer) un de ses messages de groupe échoue aujourd'hui (la base refuse la ligne devenue invisible) — bug sans effet en V1, les groupes sont masqués | Faible | À corriger avec le chantier des groupes (une fonction `delete_message`) | Équipe tech |
 
 ## 5. Liste de contrôle avant la mise en ligne
 
@@ -70,16 +80,19 @@
 
 **Supabase (production)**
 - [ ] Région **Sydney**, offre **Pro** (sauvegardes quotidiennes ; envisager la restauration à la minute près).
-- [ ] Réglages Auth identiques à `supabase/config.toml` : inscriptions anonymes **désactivées**, mots de passe `letters_digits`, codes 10 min, 1 email / minute, changement de mot de passe sécurisé, modèles d'email « code à 6 chiffres ».
+- [ ] Réglages Auth identiques à `supabase/config.toml` (**sauf** limites de débit et adresses de retour, voir plus bas) : inscriptions anonymes **désactivées**, mots de passe `letters_digits`, codes 10 min, 1 email / minute, changement de mot de passe sécurisé, modèles d'email « code à 6 chiffres ».
 - [ ] **CAPTCHA Turnstile** activé : créer un widget Turnstile dans Cloudflare (domaines = ceux du site client), mettre la **clé secrète** dans Supabase (*Auth → Bot and Abuse Protection → Turnstile*) et la **clé de site** (publique) dans la variable `EXPO_PUBLIC_TURNSTILE_SITE_KEY` du site client, puis redéployer. Test : une inscription normale passe ; un appel direct à l'API sans CAPTCHA est refusé.
-- [ ] Limites de débit adaptées au soir de Rouge (§ 4).
+- [ ] Limites de débit adaptées au soir de Rouge (§ 4) : inscriptions / connexions par IP, vérifications de code par IP, et **emails par heure (≥ 500)**.
+- [ ] *Redirect URLs* : uniquement `https://<site client>/**` (pas `exp://**`, pas `localhost`) ; *Site URL* = le site client.
+- [ ] `pg_graphql` désactivé et canaux Realtime publics désactivés s'ils ne servent pas.
+- [ ] Migration `0004` appliquée (colonnes protégées).
 - [ ] *Leaked password protection* activée si disponible.
 - [ ] SMTP Resend sur le domaine, avec **SPF, DKIM et DMARC** (sinon les codes finissent en spam, et le domaine peut être usurpé).
 - [ ] Secrets des fonctions : `ALLOWED_ORIGINS` = les adresses exactes des sites. La clé service n'existe **nulle part ailleurs** que dans Supabase.
 - [ ] Ne **jamais** lancer `seed_demo.sql` ni `pnpm db:seed-users` en production.
 
 **Hébergement et code**
-- [ ] HTTPS partout ; domaine définitif ; en-têtes de sécurité des sites actifs.
+- [ ] HTTPS partout ; domaine définitif ; en-têtes de sécurité des sites actifs, **CSP comprise** (§ 9, `pnpm check:csp` vert) ; vérifier dans la console du navigateur, sur le vrai domaine, qu'aucune ligne « Content Security Policy » n'apparaît (inscription, CAPTCHA, scanner sur un iPhone).
 - [ ] GitHub : **alertes Dependabot** activées (Matthieu, propriétaire du dépôt) ; garder la CI verte avant toute fusion.
 - [ ] Vercel : *Deployment Protection* sur les previews.
 
@@ -116,3 +129,53 @@ Exemples : clé service exposée, compte d'équipe piraté, données visibles pa
 - Jamais de secret dans une variable `EXPO_PUBLIC_*` / `NEXT_PUBLIC_*` : elles finissent dans le site. `pnpm check:secrets <dossier compilé>` le vérifie.
 - Ne jamais ouvrir, afficher ni commiter un fichier `.env*` (hors `.env.example`).
 - Messages d'erreur : jamais d'erreur brute de la base (codes `OUTLY_*` traduits dans `packages/core`).
+- Une politique RLS « ALL / UPDATE » sur ses propres lignes laisse modifier **toutes** les colonnes : restreindre les colonnes (droits par colonne ou déclencheur, comme `0004`) dès qu'une colonne est réservée à l'équipe ou au serveur.
+- Pas de script en ligne ni d'`eval` dans les sites ; toute nouvelle origine externe (script, iframe, API) s'ajoute dans `security/csp.mjs` **et** passe `pnpm security:csp`.
+
+## 9. Politique de sécurité du navigateur (CSP)
+
+La CSP dit au navigateur d'où le site a le droit de charger du code, des styles, des images, et à qui il peut parler. Si quelqu'un réussit un jour à glisser du HTML dans une page (XSS), le navigateur refuse d'exécuter son script et d'envoyer des données ailleurs que vers Supabase. **Source unique** : `security/csp.mjs` (chaque règle y est expliquée). `node security/csp.mjs` affiche les deux politiques.
+
+**Site client** (inscription, Night, Pass, Profil) :
+```
+Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; media-src 'none'
+```
+
+**Site équipe** (porte, bar, Tonight) :
+```
+Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fastly.jsdelivr.net/npm/zxing-wasm@3.1.3/dist/reader/zxing_reader.wasm; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; media-src 'self' blob: mediastream:
+```
+
+| Règle | Pourquoi |
+|---|---|
+| `default-src 'self'` | Tout ce qui n'est pas listé : le site lui-même seulement |
+| `script-src 'self'` | Seul le code du site s'exécute : **aucun script en ligne, aucun `eval`**. Client : + `challenges.cloudflare.com` (Turnstile). Équipe : + `'wasm-unsafe-eval'` (compiler le WebAssembly du lecteur QR, sans autoriser `eval`) |
+| `style-src 'self' 'unsafe-inline'` | React Native Web écrit les styles à l'exécution (et `index.html` a un `<style>` en ligne) : sans `'unsafe-inline'` → violations en série (testé). Le CSS n'exécute pas de script |
+| `img-src 'self' data: blob:` | Images et icônes du site ; `data:`/`blob:` gardés par prudence (pas nécessaires dans les parcours testés, sans risque d'exécution) |
+| `font-src 'self'` | Plus Jakarta Sans et Ionicons sont livrées avec le site (aucune requête Google Fonts, vérifié) |
+| `connect-src 'self' https://*.supabase.co wss://*.supabase.co` | API Supabase (REST, Auth, fonctions). `wss:` pour Realtime (pas utilisé aujourd'hui). Équipe : + **l'URL exacte** du fichier `zxing_reader.wasm` |
+| `frame-src` | Client : `challenges.cloudflare.com` (l'iframe Turnstile). Équipe : `'none'` |
+| `media-src` | Client : `'none'`. Équipe : `'self' blob: mediastream:` (aperçu caméra ; Chrome n'en a pas besoin, gardé pour Safari, non testé) |
+| `object-src 'none'`, `base-uri 'self'`, `form-action 'self'` | Pas de plugins ; une balise `<base>` injectée ne peut pas détourner les scripts ; pas d'envoi de formulaire ailleurs |
+| `frame-ancestors 'none'` | Personne ne peut afficher le site dans un cadre (anti-clickjacking). **Fonctionne seulement en en-tête HTTP**, pas en `<meta>` |
+
+**Mettre en place** (l'orchestrateur colle les chaînes ci-dessus) :
+- Cloudflare Pages — `apps/<site>/public/_headers` (copié dans le site compilé) :
+  ```
+  /*
+    Content-Security-Policy: <politique du site>
+  ```
+- Vercel — `apps/<site>/vercel.json` : `{"headers": [{"source": "/(.*)", "headers": [{"key": "Content-Security-Policy", "value": "<politique du site>"}]}]}`
+- `pnpm check:csp` (aussi en CI) vérifie que ces fichiers portent **exactement** la politique testée, que la politique garde ses propriétés de sécurité, et que l'URL du WebAssembly correspond à la version de `zxing-wasm` installée.
+- Une fois le projet Supabase de production créé, on peut remplacer `*.supabase.co` par l'adresse exacte du projet : `buildCsp('customer', { supabaseUrl: 'https://<ref>.supabase.co' })` (accepté par `pnpm check:csp`). C'est plus strict : un script injecté ne pourrait plus envoyer de données vers un autre projet Supabase.
+
+**Preuve** — `pnpm security:csp` (Supabase local démarré, Google Chrome, `playwright-core` installé ou `PLAYWRIGHT_CORE_PATH`) : compile les deux sites, les sert avec la CSP (Supabase local à la place de `*.supabase.co`), puis dans Chrome avec une **fausse caméra qui filme un QR code** :
+- client : page d'inscription, **widget Turnstile** (clé de test publique de Cloudflare), inscription, profil, inscription à la guest list, **QR du pass**, onglets, déconnexion, reconnexion ;
+- équipe : connexion, Tonight, scanner de porte avec le **BarcodeDetector natif** puis avec le **lecteur WebAssembly de secours** (BarcodeDetector supprimé, comme sur iPhone) : le QR est lu, `scan_pass` répond « Invalid pass », le WebAssembly est chargé (HTTP 200).
+- Résultat le 14 oct. 2026 : **18 vérifications, 0 violation**. Contre-épreuves (le test doit échouer) : sans `'wasm-unsafe-eval'` → le lecteur de secours est bloqué ; sans `challenges.cloudflare.com` → le CAPTCHA ne charge pas ; sans `'unsafe-inline'` pour les styles → violations en série. Variable `CSP_TEST_DROP` pour refaire ces contre-épreuves.
+
+**Limites connues**
+- Pas testé dans Safari / iPhone (le scanner de porte y passe par le lecteur WebAssembly) : à vérifier sur un vrai iPhone sur le domaine final avant le 24 oct.
+- Le lecteur de secours télécharge `zxing_reader.wasm` depuis `fastly.jsdelivr.net` (version figée par l'URL). Pour ne plus dépendre de ce CDN : copier le fichier dans `apps/partner/public/` et appeler `prepareZXingModule({ overrides: { locateFile: (p) => '/' + p } })` (exporté par `barcode-detector` : l'ajouter aux dépendances de `apps/partner` **à la même version** que celle d'`expo-camera`, 3.2.2, pour partager la même instance) avant le premier scan, puis retirer l'URL de `connect-src`. Toute mise à jour de `zxing-wasm` doit mettre à jour `ZXING_WASM_URL` (`pnpm check:csp` le signale).
+- *Trusted Types* (`require-trusted-types-for 'script'`) a été essayé : il bloque le chargement du script Turnstile (`script.src`) ; il faudrait une politique Trusted Types dans `Captcha.web.tsx`.
+
