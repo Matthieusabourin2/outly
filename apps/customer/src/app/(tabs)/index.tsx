@@ -131,7 +131,9 @@ export default function NightScreen() {
             style={styles.track}
             accessibilityRole="progressbar"
             accessibilityLabel="Places taken on the Outly list"
-            accessibilityValue={{ min: 0, max: stats.capacity, now: stats.joined }}
+            aria-valuemin={0}
+            aria-valuemax={stats.capacity}
+            aria-valuenow={stats.joined}
           >
             <View style={[styles.fill, { width: `${progress * 100}%` }]} />
           </View>

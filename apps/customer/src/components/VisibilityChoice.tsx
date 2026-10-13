@@ -19,7 +19,8 @@ export function VisibilityChoice({ value, onChange, disabled }: { value: Visibil
           <Pressable
             key={o.value}
             accessibilityRole="radio"
-            accessibilityState={{ checked: selected, disabled: !!disabled }}
+            aria-checked={selected}
+            aria-disabled={!!disabled}
             accessibilityLabel={`${o.title}. ${o.body}`}
             disabled={disabled}
             onPress={() => onChange(o.value)}

@@ -150,7 +150,7 @@ export default function SignInScreen() {
             <Pressable
               key={m}
               accessibilityRole="tab"
-              accessibilityState={{ selected }}
+              aria-selected={selected}
               accessibilityLabel={m === 'signup' ? 'Sign up' : 'Log in'}
               onPress={() => switchMode(m)}
               style={[styles.segmentItem, selected && styles.segmentItemOn]}
@@ -253,7 +253,7 @@ export default function SignInScreen() {
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: busy }}
+            aria-disabled={busy}
             onPress={google}
             disabled={busy}
             style={({ pressed }) => [styles.google, (pressed || busy) && styles.dimmed]}
