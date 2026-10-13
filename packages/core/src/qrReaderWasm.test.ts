@@ -26,6 +26,13 @@ describe('self-hosted QR decoder (staff site)', () => {
     const upstream = findPackage('zxing-wasm').find((d) => d.includes(`zxing-wasm@${hosted}`));
     expect(upstream).toBeDefined();
     const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
-    expect(sha(ours)).toBe(sha(readFileSync(`${upstream}/dist/reader/zxing_reader.wasm`)));
+    const theirs = readFileSync(`${upstream}/dist/reader/zxing_reader.wasm`);
+    expect(sha(ours)).toBe(sha(theirs));
+    // The browser only accepts the file whose size and SHA-256 are written in qrReader.web.ts.
+    expect(source.match(/ZXING_WASM_SHA256 = '([0-9a-f]{64})'/)?.[1]).toBe(sha(theirs));
+    expect(Number(source.match(/ZXING_WASM_BYTES = (\d+)/)?.[1])).toBe(theirs.length);
+    // The wrapper intercepts one exact URL: it must be the one zxing-wasm asks for.
+    expect(source).toContain('https://fastly.jsdelivr.net/npm/zxing-wasm@${ZXING_WASM_VERSION}/dist/reader/zxing_reader.wasm');
+    expect(readFileSync(`${upstream}/dist/es/share.js`, 'utf8')).toContain(`fastly.jsdelivr.net/npm/zxing-wasm@${hosted}/dist/`);
   });
 });
