@@ -18,7 +18,8 @@
     "env:local": "node scripts/env-local.mjs",
     "db:start": "node scripts/db-start.mjs",
     "db:stop": "supabase stop",
-    "db:seed-users": "node scripts/seed-demo-users.mjs"
+    "db:seed-users": "node scripts/seed-demo-users.mjs",
+    "check:secrets": "node scripts/check-bundle-secrets.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.117.2",

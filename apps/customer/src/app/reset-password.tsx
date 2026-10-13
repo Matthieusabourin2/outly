@@ -29,9 +29,9 @@ export default function ResetPasswordScreen() {
       </View>
       {session ? (
         <>
-          <TextField label="New password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" placeholder="At least 8 characters" />
+          <TextField label="New password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" placeholder="At least 8 characters" hint="Use letters and numbers." />
           {error ? <Text tone="danger">{error}</Text> : null}
-          <Button label="Save password" onPress={save} loading={busy} disabled={password.length < 8} />
+          <Button label="Save password" onPress={save} loading={busy} disabled={password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)} />
         </>
       ) : (
         <Button label="Back to log in" onPress={() => router.replace('/')} />

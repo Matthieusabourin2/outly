@@ -8,12 +8,18 @@ import { GOOGLE_SIGN_IN_ENABLED, authRedirectUrl, supabase } from '@/lib/supabas
 
 type Mode = 'signup' | 'login' | 'code';
 
+/** Same rule as Supabase Auth (password_requirements = letters_digits, 8+ characters). */
+function isStrongEnough(password: string): boolean {
+  return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+}
+
 /** Supabase auth errors are worded for developers: map the ones people actually hit. */
 function authMessage(error: unknown): string {
   const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : '';
   if (/invalid login credentials/i.test(message)) return 'Wrong email or password.';
   if (/already registered|already exists/i.test(message)) return 'This email already has an account. Log in instead.';
-  if (/password should be at least/i.test(message)) return 'Use at least 8 characters for your password.';
+  if (/password should (be at least|contain)/i.test(message)) return 'Use at least 8 characters, with letters and numbers.';
+  if (/only request this after|security purposes/i.test(message)) return 'Wait a minute before asking for another code.';
   if (/token has expired|invalid.*otp|otp.*invalid/i.test(message)) return 'That code is wrong or has expired. Ask for a new one.';
   if (/rate limit|too many/i.test(message)) return 'Too many attempts. Wait a minute and try again.';
   if (/unable to validate email|invalid email/i.test(message)) return 'Check your email address.';
@@ -160,7 +166,8 @@ export default function SignInScreen() {
               label="Password"
               value={password}
               onChangeText={setPassword}
-              placeholder="At least 8 characters"
+              placeholder={mode === 'signup' ? 'At least 8 characters' : undefined}
+              hint={mode === 'signup' ? 'Use at least 8 characters, with letters and numbers.' : undefined}
               secureTextEntry
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             />
@@ -168,7 +175,7 @@ export default function SignInScreen() {
               label={mode === 'signup' ? 'Create account' : 'Log in'}
               onPress={submitPassword}
               loading={busy}
-              disabled={!email.trim() || password.length < 8}
+              disabled={!email.trim() || (mode === 'signup' ? !isStrongEnough(password) : password.length === 0)}
             />
           </>
         )}

@@ -39,3 +39,37 @@ jobs:
           fetch-depth: 0 # whole history, every commit of the PR
       - name: Scan for leaked secrets (gitleaks)
         run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git --redact --no-banner /repo
+
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: No unreviewed high/critical vulnerability (accepted ones are listed in pnpm-workspace.yaml)
+        run: pnpm audit --audit-level high
+
+  websites:
+    runs-on: ubuntu-latest
+    env:
+      # Placeholders only: public values are inlined at build time, real ones live in the host's settings.
+      EXPO_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the customer and staff websites
+        run: |
+          pnpm --filter @outly/customer exec expo export --platform web --output-dir "$RUNNER_TEMP/web-customer"
+          pnpm --filter @outly/partner exec expo export --platform web --output-dir "$RUNNER_TEMP/web-partner"
+      - name: No secret reachable by browsers
+        run: node scripts/check-bundle-secrets.mjs "$RUNNER_TEMP/web-customer" "$RUNNER_TEMP/web-partner"
