@@ -134,6 +134,8 @@ async function main() {
 
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   mkdirSync(ARTIFACTS_DIR, { recursive: true });
+  // Keep the screenshots of the last 5 runs only.
+  for (const old of readdirSync(ARTIFACTS_DIR).sort().reverse().slice(4)) rmSync(join(ARTIFACTS_DIR, old), { recursive: true, force: true });
   const filters = process.argv.slice(2);
   const files = readdirSync(join(E2E_DIR, 'tests'))
     .filter((f) => f.endsWith('.test.mjs'))

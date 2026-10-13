@@ -19,7 +19,8 @@
     "db:start": "node scripts/db-start.mjs",
     "db:stop": "supabase stop",
     "db:seed-users": "node scripts/seed-demo-users.mjs",
-    "check:secrets": "node scripts/check-bundle-secrets.mjs"
+    "check:secrets": "node scripts/check-bundle-secrets.mjs",
+    "e2e": "node e2e/run.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.117.2",
