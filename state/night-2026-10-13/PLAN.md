@@ -14,7 +14,7 @@ Concrètement, mesurable :
 3. Des **scripts de mise en place de Rouge** (soirée, guest list 200, line-up, comptes du personnel) testés **en local**, sûrs par défaut (simulation, refus de la prod sans drapeau explicite).
 4. Une **suite de tests de bout en bout** dans le dépôt (`pnpm e2e`) qui rejoue les parcours client et équipe dans Chrome, caméra comprise.
 5. Les sites client et équipe **durcis** (cas limites, erreurs, accessibilité, iPhone/Safari) sans changer les décisions produit.
-6. Un **audit sécurité de la base** avec correctifs testés dans une migration `0003`.
+6. ✅ **Audit sécurité de la base** — fait avant la nuit (migration `0003`, 47 tests).
 7. Tout vert : typecheck, lint, tests unitaires, `pnpm db:test`, `pnpm e2e`, exports web, gitleaks. Poussé sur GitHub, PR en brouillon, rapport du matin écrit.
 
 ## 2. Règles infranchissables (gates) — valables pour TOUS les agents
@@ -39,14 +39,14 @@ Base commune : branche `slice/1-rouge-night` (= `slice/1-rouge` + ce plan).
 | **A. Déploiement prêt** | `~/Documents/GitHub/outly-wt/deploy` | `night/deploy` | `apps/customer` + `apps/partner` (config, `public/`, `assets/`, `package.json`), `scripts/`, `content/`, `docs/DEPLOY.md`, `package.json` racine (scripts), `.gitignore` |
 | **B. Tests de bout en bout** | `~/Documents/GitHub/outly-wt/e2e` | `night/e2e` | nouveau paquet `e2e/`, `package.json` racine (scripts), `pnpm-workspace.yaml`, `docs/SETUP.md` (section e2e) |
 | **C. Durcissement des sites** | `~/Documents/GitHub/outly-wt/apps` | `night/apps` | `apps/customer/src`, `apps/partner/src`, `packages/ui`, `packages/core` |
-| **D. Audit sécurité base** | `~/Documents/GitHub/outly-wt/db` | `night/db` | `supabase/migrations/0003_*.sql` (+ correctifs avérés de `0002`), `supabase/tests/`, `packages/db/src/types.ts` (régénéré), `packages/core/src/errors.ts` (nouveaux codes) |
+| ~~D. Audit sécurité base~~ | — | — | **Fait avant la nuit par l'orchestrateur** (13 oct., migration `0003`, 47 tests, vérifié sur la vraie base locale et dans Chrome). Les agents ne touchent pas `supabase/` sauf besoin prouvé. |
 
 Chaque chantier se termine par : typecheck + lint + tests unitaires + `pnpm db:test` verts dans son worktree, commits propres (messages en anglais, ligne `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`), et un **rapport structuré** (fait / vérifié comment / non fait / risques / questions pour Gabriel).
 
 ## 4. Intégration (orchestrateur, après les chantiers)
 
 1. Relecture de chaque rapport + vérification adversariale (un relecteur par chantier).
-2. Fusion des 4 branches dans `slice/1-rouge-night` (ordre : D → C → A → B), résolution des conflits (attendus : `package.json` racine, `pnpm-lock.yaml`).
+2. Fusion des 3 branches dans `slice/1-rouge-night` (ordre : C → A → B), résolution des conflits (attendus : `package.json` racine, `pnpm-lock.yaml`).
 3. Régénération des types si `0003` existe ; `pnpm install`.
 4. Vérification complète : typecheck, lint, unit, `pnpm db:test`, `db:reset` + `db:seed-users` + `pnpm e2e`, exports web des 2 sites, gitleaks sur tout l'historique.
 5. Push de `slice/1-rouge-night`, PR **brouillon** vers `slice/1-rouge` (empilée sur la PR #4), `gh pr checks --watch`.
@@ -59,7 +59,7 @@ Chaque chantier se termine par : typecheck + lint + tests unitaires + `pnpm db:t
 - [ ] `pnpm e2e` passe en local (parcours client + équipe, caméra simulée), résultats consignés dans le rapport.
 - [ ] Les 2 sites s'exportent en statique avec retour SPA et en-têtes ; la procédure `docs/DEPLOY.md` liste chaque étape humaine restante.
 - [ ] Scripts Rouge testés en local, refus prouvé sans `--target prod` explicite.
-- [ ] Migration `0003` (si nécessaire) couverte par des tests ; `pnpm db:test` vert.
+- [x] Migration `0003` couverte par des tests ; `pnpm db:test` vert (47 checks).
 - [ ] Aucun secret (gitleaks), aucun push sur `main`, aucune fusion, aucune action externe.
 - [ ] `MORNING.md` : ce qui est fait, comment c'est vérifié, ce qui reste, décisions à prendre, prochaines commandes.
 

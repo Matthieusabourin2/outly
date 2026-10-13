@@ -46,7 +46,7 @@ insert into events (id, venue_id, title, starts_at, source, status, is_demo) val
  ('e1000000-0000-4000-a000-000000000001','00000000-0000-4000-a000-000000000002','Rouge test night', now(), 'demo','active', true);
 insert into guest_lists (id, venue_id, event_id, night, capacity) values
  ('91000000-0000-4000-a000-000000000001','00000000-0000-4000-a000-000000000002','e1000000-0000-4000-a000-000000000001',
-  sydney_night(now()), 200);
+  private.sydney_night(now()), 200);
 insert into event_sets (event_id, artist_name, sort) values ('e1000000-0000-4000-a000-000000000001','Test Artist', 1);
 
 -- R1: join with a visibility; one pass per person
@@ -148,17 +148,21 @@ do $$ begin
   raise notice 'R7 ok: customer cannot scan, write scans or edit others';
 end $$;
 
--- R8: door scanning — ok once, then already used; garbage and wrong nonce are invalid; all logged
+-- R8: door scanning — ok once, then already used; garbage and wrong nonce are invalid; all logged.
+-- Pass codes are built with the service role: door staff can no longer read raw bookings (0003 H4).
+select pg_temp.as_service();
+select set_config('outly.alex_code', (select 'OUTLY1:' || id || ':' || qr_nonce from bookings
+  where guest_list_id = '91000000-0000-4000-a000-000000000001' and user_id = 'a1000000-0000-4000-a000-000000000001'), false);
+select set_config('outly.jess_code', (select 'OUTLY1:' || id || ':' || qr_nonce from bookings
+  where guest_list_id = '91000000-0000-4000-a000-000000000001' and user_id = 'a1000000-0000-4000-a000-000000000002'), false);
+select set_config('outly.jess_bad', (select 'OUTLY1:' || id || ':' || gen_random_uuid() from bookings
+  where guest_list_id = '91000000-0000-4000-a000-000000000001' and user_id = 'a1000000-0000-4000-a000-000000000002'), false);
 select pg_temp.as_user('a1000000-0000-4000-a000-000000000004');
 do $$
-declare alex text; jess text; jess_bad text; r record;
+declare alex text := current_setting('outly.alex_code'); jess text := current_setting('outly.jess_code');
+        jess_bad text := current_setting('outly.jess_bad'); r record;
 begin
-  select 'OUTLY1:' || id || ':' || qr_nonce into alex from bookings
-   where guest_list_id = '91000000-0000-4000-a000-000000000001' and user_id = 'a1000000-0000-4000-a000-000000000001';
-  select 'OUTLY1:' || id || ':' || qr_nonce, 'OUTLY1:' || id || ':' || gen_random_uuid() into jess, jess_bad from bookings
-   where guest_list_id = '91000000-0000-4000-a000-000000000001' and user_id = 'a1000000-0000-4000-a000-000000000002';
-  if alex is null or jess is null then raise exception 'R8 FAILED: door cannot read the venue bookings'; end if;
-  perform set_config('outly.alex_code', alex, false);
+  if alex is null or jess is null then raise exception 'R8 FAILED: test codes missing'; end if;
 
   select * into r from scan_pass('00000000-0000-4000-a000-000000000002', alex);
   if r.result <> 'ok' or r.username <> 'r_alex' then raise exception 'R8a FAILED: %', r; end if;
@@ -179,7 +183,7 @@ do $$ declare n int; begin
   select count(*) into n from scan_events;
   if n <> 0 then raise exception 'R9a FAILED: customer sees % scans', n; end if;
   begin
-    perform venue_live_stats('00000000-0000-4000-a000-000000000002', sydney_night(now()));
+    perform venue_live_stats('00000000-0000-4000-a000-000000000002', private.sydney_night(now()));
     raise exception 'R9b FAILED';
   exception when raise_exception then
     if sqlerrm <> 'OUTLY_FORBIDDEN' then raise exception 'R9b FAILED: %', sqlerrm; end if;
@@ -188,7 +192,7 @@ do $$ declare n int; begin
 end $$;
 select pg_temp.as_user('a1000000-0000-4000-a000-000000000006');
 do $$ declare s record; begin
-  select * into s from venue_live_stats('00000000-0000-4000-a000-000000000002', sydney_night(now()))
+  select * into s from venue_live_stats('00000000-0000-4000-a000-000000000002', private.sydney_night(now()))
    where guest_list_id = '91000000-0000-4000-a000-000000000001';
   if s.joined <> 3 or s.checked_in <> 2 or s.classic_count <> 2 or s.ghost_count <> 1
      or s.scans_ok <> 2 or s.scans_failed <> 3 or s.last_scan_at is null then
@@ -198,7 +202,7 @@ do $$ declare s record; begin
 end $$;
 select pg_temp.as_user('a1000000-0000-4000-a000-000000000007');
 do $$ declare n int; m int; begin
-  select count(*) into n from venue_live_stats('00000000-0000-4000-a000-000000000002', sydney_night(now()));
+  select count(*) into n from venue_live_stats('00000000-0000-4000-a000-000000000002', private.sydney_night(now()));
   select count(*) into m from scan_events where venue_id = '00000000-0000-4000-a000-000000000002';
   if n < 1 or m <> 5 then raise exception 'R9d FAILED: stats=% scans=%', n, m; end if;
   raise notice 'R9d ok: Outly staff see stats and the scan log';

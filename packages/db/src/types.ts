@@ -1149,13 +1149,13 @@ isOneToOne: false
                   ]
                 },"public_profiles": {
                   Row: {
-                    "avatar_url": string | null,"display_name": string | null,"id": string | null,"referral_code": string | null,"username": string | null
+                    "avatar_url": string | null,"id": string | null,"username": string | null
                   }
                   Insert: {
-                           "avatar_url"?: string | null,"display_name"?: string | null,"id"?: string | null,"referral_code"?: string | null,"username"?: string | null
+                           "avatar_url"?: string | null,"id"?: string | null,"username"?: string | null
                          }
                         Update: {
-                           "avatar_url"?: string | null,"display_name"?: string | null,"id"?: string | null,"referral_code"?: string | null,"username"?: string | null
+                           "avatar_url"?: string | null,"id"?: string | null,"username"?: string | null
                          }
                         Relationships: [
                     
@@ -1182,16 +1182,7 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "are_friends":
-{ Args: { "a": string,"b": string }; Returns: boolean
-                           },
-"can_see_activity":
-{ Args: { "owner": string }; Returns: boolean
-                           },
-"can_see_venue_stats":
-{ Args: { "v": string }; Returns: boolean
-                           },
-"cancel_booking":
+            "cancel_booking":
 { Args: { "p_booking_id": string }; Returns: {
               "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
 "checked_in_at": string | null,
@@ -1247,9 +1238,6 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
-"content_visible":
-{ Args: { "src": Database["public"]['Enums']["content_source"],"st": Database["public"]['Enums']["content_status"],"verified": string }; Returns: boolean
-                           },
 "decide_booking":
 { Args: { "p_accept": boolean,"p_booking_id": string }; Returns: {
               "attendee_visibility": Database["public"]['Enums']["attendee_visibility"],
@@ -1283,43 +1271,10 @@ isOneToOne: false
               "user_id": string,"username": string
             }[]
                            },
-"expire_and_no_show":
-{ Args: Record<PropertyKey, never>; Returns: undefined
-                           },
 "guest_list_stats":
 { Args: { "p_guest_list_id": string }; Returns: {
               "capacity": number,"joined": number,"remaining": number
             }[]
-                           },
-"has_venue_role":
-{ Args: { "roles": (Database["public"]['Enums']["venue_role"])[],"v": string }; Returns: boolean
-                           },
-"is_blocked_between":
-{ Args: { "a": string,"b": string }; Returns: boolean
-                           },
-"is_outly":
-{ Args: { "roles"?: (Database["public"]['Enums']["outly_role"])[] }; Returns: boolean
-                           },
-"is_partner_venue":
-{ Args: { "v": string }; Returns: boolean
-                           },
-"is_payment_participant":
-{ Args: { "pr": string }; Returns: boolean
-                           },
-"is_payment_venue_member":
-{ Args: { "pr": string }; Returns: boolean
-                           },
-"is_squad_admin":
-{ Args: { "s": string }; Returns: boolean
-                           },
-"is_squad_member":
-{ Args: { "s": string }; Returns: boolean
-                           },
-"is_suspended":
-{ Args: { "u": string }; Returns: boolean
-                           },
-"is_venue_member":
-{ Args: { "v": string }; Returns: boolean
                            },
 "join_event_list":
 { Args: { "p_guest_list_id": string,"p_visibility"?: Database["public"]['Enums']["attendee_visibility"] }; Returns: {
@@ -1377,9 +1332,6 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
-"parse_pass_code":
-{ Args: { "p_code": string }; Returns: Record<string, unknown>
-                           },
 "recent_scans":
 { Args: { "p_limit"?: number,"p_venue_id": string }; Returns: {
               "created_at": string,"id": number,"kind": string,"result": Database["public"]['Enums']["scan_result"],"username": string
@@ -1451,12 +1403,14 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
-"sydney_night":
-{ Args: { "ts": string }; Returns: string
-                           },
 "venue_activity":
 { Args: { "p_bucket_minutes"?: number,"p_guest_list_id": string }; Returns: {
               "bucket_start": string,"check_ins": number,"joins": number,"scans_failed": number
+            }[]
+                           },
+"venue_commercial_terms":
+{ Args: { "p_venue_id": string }; Returns: {
+              "booking_commission_cents": number,"commission_rate": number,"stripe_account_id": string
             }[]
                            },
 "venue_live_stats":
