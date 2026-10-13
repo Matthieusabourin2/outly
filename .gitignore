@@ -19,3 +19,8 @@ expo-env.d.ts
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+# Real launch content (venue address, staff emails): local files only, never committed.
+content/*.local.*
+# End-to-end tests (pnpm e2e): exported sites and screenshots
+e2e/.dist/
+e2e/.artifacts/

@@ -21,7 +21,7 @@ insert into venues (id, partner_status, name, address, lat, lng, categories, vib
 
 insert into deals (venue_id, title, description, categories, source, status, starts_at, ends_at, recurrence, is_demo) values
  ('00000000-0000-4000-a000-000000000001','20% off signature cocktails','Mon–Thu, 4–7pm.','{drinks}','demo','active', now() - interval '1 day', now() + interval '30 days','FREQ=WEEKLY;BYDAY=MO,TU,WE,TH',true),
- ('00000000-0000-4000-a000-000000000002','2 for 1 spritz','Daily 4–7pm.','{drinks}','demo','active', now() - interval '1 day', now() + interval '14 days','FREQ=DAILY',true),
+ ('00000000-0000-4000-a000-000000000001','2 for 1 spritz','Daily 4–7pm.','{drinks}','demo','active', now() - interval '1 day', now() + interval '14 days','FREQ=DAILY',true),
  ('00000000-0000-4000-a000-000000000003','$15 pasta & a glass','Mon–Wed dinner.','{food,drinks}','demo','active', now() - interval '1 day', now() + interval '21 days','FREQ=WEEKLY;BYDAY=MO,TU,WE',true),
  ('00000000-0000-4000-a000-000000000001','Free entry before 10pm','Saturdays, guest list only.','{entry}','demo','active', now() - interval '1 day', now() + interval '60 days','FREQ=WEEKLY;BYDAY=SA',true);
 
@@ -39,6 +39,7 @@ insert into guest_lists (venue_id, night, capacity, closes_at) values
  ('00000000-0000-4000-a000-000000000002', (now() at time zone 'Australia/Sydney')::date, 60, null);
 
 -- Demo launch night: mirrors the Rouge flow (SPEC A4) with fictional data.
+-- Velvet Tram has no other drinks deal, so the Outly drinks offer below starts OFF (draft), as for Rouge.
 -- Event + linked guest list (200, no closing time) + line-up + a drinks offer left OFF (draft).
 insert into events (id, venue_id, title, description, tags, starts_at, ends_at, source, status, is_demo) values
  ('00000000-0000-4000-b000-000000000001','00000000-0000-4000-a000-000000000002','Outly Launch Night',
@@ -64,4 +65,4 @@ insert into event_sets (event_id, artist_name, starts_at, ends_at, sort) values
 
 insert into deals (id, venue_id, title, description, categories, source, status, is_demo) values
  ('00000000-0000-4000-d000-000000000001','00000000-0000-4000-a000-000000000002','10% off cocktails for Outly members',
-  'Show your Outly pass at the bar. Please drink responsibly.','{drinks}','demo','draft',true);
+  'All night at the main bar, one per pass.','{drinks}','demo','draft',true);

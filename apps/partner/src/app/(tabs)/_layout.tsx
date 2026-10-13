@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, fonts, layout } from '@outly/ui';
+import { colors, layout, type as typeScale } from '@outly/ui';
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
@@ -25,7 +25,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, minHeight: layout.tabBarHeight },
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+        tabBarLabelStyle: { fontFamily: typeScale.tabLabel.fontFamily, fontSize: typeScale.tabLabel.fontSize },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Tonight', tabBarIcon: icon('stats-chart', 'stats-chart-outline') }} />

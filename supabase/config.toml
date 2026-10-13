@@ -184,7 +184,7 @@ enable_manual_linking = false
 minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+password_requirements = "letters_digits"  # security: 8+ chars with letters and digits
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -206,17 +206,20 @@ anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
+# Launch night: guests on the venue Wi-Fi / carrier NAT share ONE IP — raise this in production for the night
+# (see docs/SECURITY.md) and rely on CAPTCHA against bots.
 sign_in_sign_ups = 30
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
 web3 = 30
 
-# Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
+# Bot protection on sign-up / sign-in (docs/SECURITY.md): Cloudflare Turnstile, enabled in production once
+# the Cloudflare account exists. Locally, Turnstile's public TEST secret always passes.
 # [auth.captcha]
 # enabled = true
-# provider = "hcaptcha"
-# secret = ""
+# provider = "turnstile"
+# secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -227,13 +230,13 @@ double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
-secure_password_change = false
+secure_password_change = true  # security: changing a password needs a recent sign-in
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
-max_frequency = "1s"
+max_frequency = "60s"  # security: at most one auth email per minute per user (no inbox flooding)
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+otp_expiry = 600  # security: 6-digit codes expire after 10 minutes
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]

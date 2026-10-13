@@ -10,7 +10,7 @@ const OPTIONS: { value: Visibility; title: string; body: string; icon: 'eye-off-
   { value: 'classic', title: 'Classic', body: 'Your username shows on the list, and you see everyone else who chose classic.', icon: 'hand-left-outline' },
 ];
 
-export function VisibilityChoice({ value, onChange }: { value: Visibility; onChange: (v: Visibility) => void }) {
+export function VisibilityChoice({ value, onChange, disabled }: { value: Visibility; onChange: (v: Visibility) => void; disabled?: boolean }) {
   return (
     <View style={styles.root} accessibilityRole="radiogroup">
       {OPTIONS.map((o) => {
@@ -19,7 +19,10 @@ export function VisibilityChoice({ value, onChange }: { value: Visibility; onCha
           <Pressable
             key={o.value}
             accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
+            aria-checked={selected}
+            aria-disabled={!!disabled}
+            accessibilityLabel={`${o.title}. ${o.body}`}
+            disabled={disabled}
             onPress={() => onChange(o.value)}
             style={[styles.option, selected && styles.optionOn]}
           >

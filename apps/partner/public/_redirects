@@ -1,0 +1,7 @@
+# Cloudflare Pages: NO redirect rule on purpose (see docs/DEPLOY.md, "Retour SPA").
+# The site is a single-page app: Pages already serves index.html for every unknown URL
+# (/pass, /sign-in, ...) because the build has no top-level 404.html. Keep it that way.
+#  - "/* /index.html 200" is rejected by Pages ("Infinite loop detected ... ignored").
+#  - "/* / 200" is accepted but runs BEFORE static files: the JS, icons and manifest
+#    would all be answered with the HTML page and the site would not load.
+# Both behaviours were checked with `wrangler pages dev` on the exported site (14 Oct 2026).

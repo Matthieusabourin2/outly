@@ -86,6 +86,7 @@ export const type = {
   bodyStrong: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21 },
   caption: { fontFamily: fonts.medium,    fontSize: 12, lineHeight: 16 },
   micro:   { fontFamily: fonts.semibold,  fontSize: 10, lineHeight: 12, letterSpacing: 0.4 },
+  tabLabel: { fontFamily: fonts.medium,    fontSize: 11, lineHeight: 14 },
 } as const;
 
 export const shadow = {

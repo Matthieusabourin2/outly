@@ -100,31 +100,28 @@ update guest_lists set closes_at = null where venue_id = '00000000-0000-4000-a00
 select pg_temp.as_user('11111111-1111-4111-a111-111111111111');
 do $$ declare b bookings; gl uuid; begin
   select id into gl from guest_lists where venue_id = '00000000-0000-4000-a000-000000000001' limit 1;
-  b := join_guest_list(gl, 4);
+  b := join_event_list(gl);  -- join_guest_list is not callable through the API since 0005 (A4)
   if b.status <> 'confirmed' then raise exception 'T5a FAILED'; end if;
   perform set_config('outly.test_booking', b.id::text, true);
   perform set_config('outly.test_nonce', b.qr_nonce::text, true);
   raise notice 'T5a ok: guest list confirmed';
+  -- Table requests are deferred (A1): closed to signed-in users since 0005.
   begin
     perform request_table('00000000-0000-4000-a000-000000000005', now() + interval '1 day', 2);
     raise exception 'T5b FAILED';
-  exception when raise_exception then
-    if sqlerrm like 'T5b%' then raise; end if;
-    raise notice 'T5b ok: non-partner venue refused (%)', sqlerrm;
+  exception when insufficient_privilege then
+    raise notice 'T5b ok: table requests closed to users (%)', sqlerrm;
   end;
 end $$;
 select pg_temp.as_user('33333333-3333-4333-a333-333333333333');
-do $$ declare b bookings; bid uuid := current_setting('outly.test_booking')::uuid; n uuid := current_setting('outly.test_nonce')::uuid; begin
-  b := check_in(bid, n);
-  if b.status <> 'checked_in' then raise exception 'T5c FAILED'; end if;
+do $$ declare r record; bid uuid := current_setting('outly.test_booking')::uuid; n uuid := current_setting('outly.test_nonce')::uuid; begin
+  -- Door check-in goes through scan_pass (check_in is closed to users since 0006).
+  select * into r from scan_pass('00000000-0000-4000-a000-000000000001', 'OUTLY1:' || bid || ':' || n);
+  if r.result <> 'ok' then raise exception 'T5c FAILED: %', r.result; end if;
   raise notice 'T5c ok: door checked in';
-  begin
-    perform check_in(bid, n);
-    raise exception 'T5d FAILED: nonce reused';
-  exception when raise_exception then
-    if sqlerrm like 'T5d%' then raise; end if;
-    raise notice 'T5d ok: screenshot reuse refused (%)', sqlerrm;
-  end;
+  select * into r from scan_pass('00000000-0000-4000-a000-000000000001', 'OUTLY1:' || bid || ':' || n);
+  if r.result <> 'already_used' then raise exception 'T5d FAILED: nonce reused (%)', r.result; end if;
+  raise notice 'T5d ok: screenshot reuse refused (already_used)';
 end $$;
 rollback;
 

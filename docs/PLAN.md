@@ -43,10 +43,12 @@ Supabase Pro (région Sydney) · Cloudflare Pages (`domaine`, `staff.domaine`, `
 
 | Chantier | État |
 |---|---|
-| Base de données (migration 0002, 36 tests) | ✅ fait |
+| Base de données (migration 0002) | ✅ fait |
+| Audit sécurité de la base (migration 0003 : fonctions internes cachées, prénoms masqués, codes des pass invisibles pour les vigiles, commissions masquées) — 47 tests | ✅ fait (13 oct.) |
 | Comptes de démo locaux (`pnpm db:seed-users`) | ✅ fait |
 | Site client : inscription, code par email, profil 18+, soirée, guest list, fantôme/classique, signaler/bloquer, pass QR, suppression de compte, pages légales | ✅ fait, testé dans Chrome |
 | Site équipe : connexion, onglets par rôle, scan porte, scan bar, compteurs | ✅ fait, testé dans Chrome avec une fausse caméra |
+| Nuit du 13 → 14 oct. (branche `slice/1-rouge-night`, PR #5) : sécurité transverse (CSP prouvée dans Chrome, CAPTCHA Turnstile sur les deux sites, migrations 0004/0005 : 6 failles fermées, contrôle des secrets dans les builds, gitleaks + audit des dépendances en CI), sites durcis (scanner réécrit, hors ligne, erreurs, accessibilité, lecteur QR auto-hébergé), config d'hébergement + `docs/DEPLOY.md` + scripts Rouge, tests de bout en bout `pnpm e2e` (8 scénarios) | ✅ fait, tout vert — à relire (voir `state/night-2026-10-13/MORNING.md`) |
 | Tableau de bord admin | ⏳ Tondal775 (fonctions prêtes : `venue_live_stats`, `venue_activity`, `recent_scans`) |
 | Mise en ligne (domaine, Supabase Pro, Cloudflare, Resend, Google) | ⛔ en attente des achats des CEO |
 | Test du scan sur de vrais téléphones | ⛔ demande la mise en ligne (la caméra exige HTTPS) |

@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { isAdult, parseDateOfBirth, toIsoDate, usernameSchema } from './profile';
+import { isAdult, normaliseUsername, parseDateOfBirth, toIsoDate, usernameSchema } from './profile';
 
 describe('profile rules', () => {
   it('validates usernames like the database', () => {
     expect(usernameSchema.safeParse('jess.nights_1').success).toBe(true);
     expect(usernameSchema.safeParse('jo').success).toBe(false);
     expect(usernameSchema.safeParse('no spaces').success).toBe(false);
+  });
+  it('cleans up what people type as a username', () => {
+    expect(normaliseUsername(' @Jess.Nights ')).toBe('Jess.Nights');
+    expect(normaliseUsername('@@jess')).toBe('jess');
+    expect(normaliseUsername('@ jess')).toBe('jess');
+    // Spaces inside stay, so the rule explains what's wrong instead of silently changing the name.
+    expect(usernameSchema.safeParse(normaliseUsername('jess nights')).success).toBe(false);
+    expect(usernameSchema.safeParse(normaliseUsername('  @JESS_1  ')).success).toBe(true);
   });
   it('parses real dates only', () => {
     expect(toIsoDate(parseDateOfBirth('29', '02', '2004')!)).toBe('2004-02-29');

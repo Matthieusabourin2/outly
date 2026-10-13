@@ -1,7 +1,8 @@
-import { sydneyNight, toUserMessage } from '@outly/core';
+import { pickTonightList, sydneyNight, toUserMessage } from '@outly/core';
 import type { Enums } from '@outly/db';
+import { startVisiblePolling } from '@outly/ui';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { canSeeVenueStats, useStaff } from './staff';
 import { supabase } from './supabase';
 
@@ -34,17 +35,24 @@ const EMPTY: State = { loading: true, error: null, guestListId: null, counter: n
 /** Tonight at the selected venue. Managers get full stats; door and bar staff get the counter and their own scans. */
 export function useTonight() {
   const { current } = useStaff();
-  const [state, setState] = useState<State>(EMPTY);
-  const busy = useRef(false);
   const venueId = current?.venueId;
   const manager = current ? canSeeVenueStats(current.role) : false;
+  // Each answer is tagged with its venue: after a venue switch nothing from the previous
+  // venue is shown, and a late answer for it is dropped.
+  const [state, setState] = useState<State & { venueId: string | null }>({ ...EMPTY, venueId: null });
+  const busyFor = useRef<string | null>(null);
+  const currentVenue = useRef(venueId);
+  useEffect(() => {
+    currentVenue.current = venueId;
+  }, [venueId]);
 
   const load = useCallback(async () => {
-    if (!venueId || busy.current) return;
-    busy.current = true;
+    if (!venueId || busyFor.current === venueId) return;
+    busyFor.current = venueId;
+    const stillCurrent = () => currentVenue.current === venueId;
     try {
       const [list, offer, scans] = await Promise.all([
-        supabase.from('guest_lists').select('id').eq('venue_id', venueId).eq('night', sydneyNight()).order('created_at').limit(1).maybeSingle(),
+        supabase.from('guest_lists').select('id, event_id, created_at').eq('venue_id', venueId).eq('night', sydneyNight()).limit(20),
         supabase
           .from('deals')
           .select('id, title')
@@ -57,25 +65,28 @@ export function useTonight() {
         supabase.rpc('recent_scans', { p_venue_id: venueId, p_limit: 8 }),
       ]);
       if (list.error) throw list.error;
+      const tonight = pickTonightList(list.data);
       if (offer.error) throw offer.error;
       if (scans.error) throw scans.error;
 
       let counter: State['counter'] = null;
       let live: LiveStats | null = null;
-      if (list.data) {
-        const c = await supabase.rpc('guest_list_stats', { p_guest_list_id: list.data.id });
+      if (tonight) {
+        const c = await supabase.rpc('guest_list_stats', { p_guest_list_id: tonight.id });
         if (c.error) throw c.error;
         counter = c.data[0] ?? null;
         if (manager) {
           const s = await supabase.rpc('venue_live_stats', { p_venue_id: venueId });
           if (s.error) throw s.error;
-          live = s.data.find((r) => r.guest_list_id === list.data!.id) ?? null;
+          live = s.data.find((r) => r.guest_list_id === tonight.id) ?? null;
         }
       }
+      if (!stillCurrent()) return;
       setState({
+        venueId,
         loading: false,
         error: null,
-        guestListId: list.data?.id ?? null,
+        guestListId: tonight?.id ?? null,
         counter,
         live,
         offer: offer.data,
@@ -83,19 +94,16 @@ export function useTonight() {
       });
     } catch (e) {
       console.warn('[useTonight]', e);
-      setState((s) => ({ ...s, loading: false, error: toUserMessage(e) }));
+      if (!stillCurrent()) return;
+      setState((s) => (s.venueId === venueId ? { ...s, loading: false, error: toUserMessage(e) } : { ...EMPTY, venueId, loading: false, error: toUserMessage(e) }));
     } finally {
-      busy.current = false;
+      if (busyFor.current === venueId) busyFor.current = null;
     }
   }, [venueId, manager]);
 
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-      const timer = setInterval(() => void load(), REFRESH_MS);
-      return () => clearInterval(timer);
-    }, [load]),
-  );
+  // Live while the screen is focused AND the tab/app is visible (no polling from a phone in a pocket).
+  useFocusEffect(useCallback(() => startVisiblePolling(() => void load(), REFRESH_MS), [load]));
 
-  return { ...state, reload: load };
+  const { venueId: loadedFor, ...rest } = state;
+  return { ...(loadedFor === venueId ? rest : EMPTY), reload: load };
 }

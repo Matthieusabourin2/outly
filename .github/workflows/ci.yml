@@ -5,13 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege: CI only reads the code (no job needs to write to the repository).
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4 # version read from package.json "packageManager"
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4 — version read from package.json "packageManager"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: pnpm
@@ -23,19 +27,55 @@ jobs:
   database:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
-      - run: pip install pgserver
+      - run: pip install pgserver==0.1.4
       - name: Migrations + demo seed + RLS smoke tests
         run: python3 supabase/tests/run_local.py
 
   secrets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0 # whole history, every commit of the PR
       - name: Scan for leaked secrets (gitleaks)
-        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git --redact --no-banner /repo
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git --redact --no-banner /repo
+
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: No unreviewed high/critical vulnerability (accepted ones are listed in pnpm-workspace.yaml)
+        run: pnpm audit --audit-level high
+
+  websites:
+    runs-on: ubuntu-latest
+    env:
+      # Placeholders only: public values are inlined at build time, real ones live in the host's settings.
+      EXPO_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the customer and staff websites
+        run: |
+          pnpm --filter @outly/customer exec expo export --platform web --output-dir "$RUNNER_TEMP/web-customer"
+          pnpm --filter @outly/partner exec expo export --platform web --output-dir "$RUNNER_TEMP/web-partner"
+      - name: No secret reachable by browsers
+        run: node scripts/check-bundle-secrets.mjs "$RUNNER_TEMP/web-customer" "$RUNNER_TEMP/web-partner"
+      - name: Content-Security-Policy matches the tested one (security/csp.mjs, pnpm security:csp)
+        run: node scripts/check-csp-headers.mjs

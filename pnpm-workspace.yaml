@@ -1,5 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "e2e"
 allowBuilds:
   unrs-resolver: true
+# Known advisories accepted after review (see docs/SECURITY.md § Dépendances). CI fails on any OTHER high/critical.
+# Remove an entry as soon as a fixed version ships.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv # node-forge (high) via @expo/cli code signing — dev/build tool, never shipped to browsers, no fix yet
+    - GHSA-vfj7-8cjw-p6xm # braces (high) via shadcn CLI file globbing — dev tool, never shipped to browsers, no fix yet

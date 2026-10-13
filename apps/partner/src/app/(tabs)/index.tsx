@@ -1,26 +1,29 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { sydneyTime } from '@outly/core';
-import { Button, Card, Chip, Screen, Text, colors, radii, spacing } from '@outly/ui';
+import { Button, Card, Chip, FormError, OfflineBanner, Screen, Text, colors, radii, spacing } from '@outly/ui';
 import { router } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
-import { RESULT_LABELS } from '@/lib/scanText';
+import { OFFLINE_STAFF_MESSAGE, RESULT_LABELS } from '@/lib/scanText';
 import { ROLE_LABELS, canScanBar, canScanDoor, canSeeVenueStats, useStaff } from '@/lib/staff';
 import { useTonight } from '@/lib/tonight';
 
 export default function TonightScreen() {
   const { current, memberships, selectVenue, signOut } = useStaff();
-  const { loading, error, guestListId, counter, live, scans, offer } = useTonight();
+  const { loading, error, guestListId, counter, live, scans, offer, reload } = useTonight();
   if (!current) return null;
   const manager = canSeeVenueStats(current.role);
 
   return (
     <Screen>
+      <OfflineBanner message={OFFLINE_STAFF_MESSAGE} />
       <View style={styles.header}>
         <View style={styles.flex}>
           <Text variant="micro" tone="accent">
             OUTLY STAFF · {ROLE_LABELS[current.role].toUpperCase()}
           </Text>
-          <Text variant="h1">Tonight at {current.venueName}</Text>
+          <Text variant="h1" accessibilityRole="header">
+            Tonight at {current.venueName}
+          </Text>
         </View>
         <Button label="Log out" variant="ghost" onPress={signOut} />
       </View>
@@ -33,10 +36,15 @@ export default function TonightScreen() {
         </ScrollView>
       ) : null}
 
-      {loading ? <ActivityIndicator color={colors.accent} /> : null}
-      {error ? <Text tone="danger">{error}</Text> : null}
+      {loading ? <ActivityIndicator color={colors.accent} accessibilityLabel="Loading" /> : null}
+      {error ? (
+        <View style={styles.errorRow}>
+          <FormError style={styles.flex}>{error}</FormError>
+          <Button label="Try again" variant="secondary" onPress={reload} />
+        </View>
+      ) : null}
 
-      {!loading && !guestListId ? (
+      {!loading && !error && !guestListId ? (
         <Card>
           <Text variant="bodyStrong">No Outly guest list tonight</Text>
           <Text tone="secondary">Outly passes for this venue will show up here on the night.</Text>
@@ -64,7 +72,9 @@ export default function TonightScreen() {
       ) : null}
 
       <View style={styles.section}>
-        <Text variant="h3">{manager ? 'Latest scans' : 'Your latest scans'}</Text>
+        <Text variant="h3" accessibilityRole="header">
+          {manager ? 'Latest scans' : 'Your latest scans'}
+        </Text>
         {scans.length === 0 ? (
           <Text tone="muted">No scans yet.</Text>
         ) : (
@@ -113,6 +123,7 @@ function Stat({ label, value, suffix, danger }: { label: string; value: string; 
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
+  errorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   flex: { flex: 1 },
   chips: { gap: spacing[2] },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },

@@ -17,6 +17,7 @@ Outly is a Sydney going-out app: three products (customer app, partner venue app
 3. **Google terms:** store only `google_place_id` (lat/lng ≤ 30 days in `place_cache`). Places data on a map → Google Maps only. Show Google attribution; reviews/photos link to `googleMapsUri`.
 4. **Honest offers:** every deal/event has `source` (`public_listing` | `outly_partner` | `demo`) and shows its label. `public_listing` needs `source_url` + `verified_at` (hidden after 30 days). Never invent an offer for a real venue. Demo data only in demo/dev.
 5. Booking, guest list, QR pass and Outly Pay only at `partner_status = 'partner'` venues.
+   Internal SQL helpers go in schema `private` (never `public`, which the API exposes); select explicit columns on `venues` (commercial columns are not granted, SPEC A10).
 6. **18+ only** (DB trigger + sign-up UI).
 7. **AI reads and drafts; the human confirms.** No AI tool performs a write without a confirmation screen. Responsible-service rules in every system prompt (see SPEC §10).
 8. Social is **friends only**: report + block everywhere users interact. Friend activity is opt-in, off by default. Never share live location.
@@ -38,6 +39,7 @@ Outly is a Sydney going-out app: three products (customer app, partner venue app
 - `pnpm db:start` / `pnpm db:stop` — local Supabase (Docker)
 - `pnpm db:reset` — reset local Supabase and apply migrations + demo seed
 - `pnpm env:local` — write `apps/*/.env.local` from the running local Supabase
+- `pnpm db:seed-users` — create the local demo accounts (admin / manager / door / bar / guest, see `docs/SETUP.md`); rerun after every `db:reset`. Refuses any non-local Supabase.
 - `pnpm db:test` — migrations + seed + RLS smoke tests on a throwaway Postgres (no Docker)
 - `pnpm db:types` — regenerate `packages/db/src/types.ts`
 - `pnpm typecheck`, `pnpm lint`, `pnpm test`
