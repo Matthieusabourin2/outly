@@ -31,7 +31,7 @@
 
 | Protection | Détail | Preuve |
 |---|---|---|
-| **Sécurité par ligne (RLS) sur toutes les tables** | Chaque requête est filtrée par la base selon l'utilisateur, quoi que fasse le site | 56 vérifications (`pnpm db:test`), CI ; sonde de l'API locale (anonyme + compte normal) : 37 tables/vues, 19 fonctions |
+| **Sécurité par ligne (RLS) sur toutes les tables** | Chaque requête est filtrée par la base selon l'utilisateur, quoi que fasse le site | 63 vérifications (`pnpm db:test`), CI ; sonde de l'API locale (anonyme + compte normal) : 37 tables/vues, 19 fonctions |
 | **Fonctions internes hors de l'API** | 20 fonctions déplacées dans le schéma `private` : impossible de demander « A et B sont-ils amis / bloqués ? » | Migration 0003 (H1), sondes API |
 | **Pseudos seulement** | La liste publique des profils ne montre que `id`, pseudo, avatar ; la liste des participants seulement les pseudos des personnes en mode classique | 0003 (H3), tests R3/H3 |
 | **Mode fantôme par défaut, réciproque** | Invisible = ne voit personne | Tests R2/R3 |
@@ -40,7 +40,9 @@
 | **Pass QR à usage unique** | Code aléatoire non devinable, renouvelé au scan ; une capture d'écran ne passe qu'une fois ; le vigile vérifie aussi le billet | Tests R8, T5 |
 | **Personnel limité au strict nécessaire** | Vigiles et barmans ne lisent ni les réservations ni les codes des pass : ils passent par `scan_pass` / `redeem_offer` | 0003 (H4), test H4 |
 | **Journal de tous les scans** | Chaque scan, réussi ou refusé, est enregistré (qui, quand, résultat) | `scan_events`, tests R8/R9 |
-| **Colonnes protégées sur son propre profil** | Une personne ne peut pas lever sa propre suspension, se déclarer « identité vérifiée », changer son niveau, ses absences ou ses données de parrainage ; seul le support Outly (et le serveur) le peut. Accepter une demande d'ami ne permet pas de changer qui l'a envoyée ; un message ne peut pas être déplacé dans un autre groupe | Migration 0004, tests P1–P3 ; trous reproduits via l'API locale **avant**, refusés **après** (HTTP 400 / 403) |
+| **Colonnes protégées sur son propre profil** | Une personne ne peut pas lever sa propre suspension, se déclarer « identité vérifiée », changer son niveau, ses absences ou ses données de parrainage ; seul le support Outly (et le serveur) le peut. À la création du profil, impossible de se donner un parrain, de choisir son code de parrainage ou d'antidater son compte ; un « upsert » ne contourne pas la règle. Accepter une demande d'ami ne permet pas de changer qui l'a envoyée ; un message ne peut être ni déplacé dans un autre groupe ni antidaté | Migration 0004, tests P1–P3 ; trous reproduits via l'API locale **avant**, refusés **après** (HTTP 400 / 403) |
+| **Une personne = un pass** | La guest list ne se rejoint que par `join_event_list` (1 place). `join_guest_list` (jusqu'à 30 places d'un coup : 7 comptes remplissaient les 200 places) et `request_table` (réservations de table, reportées par A1) sont fermées à l'API | Migration 0005, tests F2, T5 ; sondé : HTTP 200 et « 31 / 200 » **avant**, HTTP 403 **après** |
+| **La suppression d'un compte ne peut pas être bloquée** | Toute référence facultative à une personne (parrain, vigile qui a scanné, manager qui a créé la soirée…) est effacée avec elle (`ON DELETE SET NULL`). Avant : n'importe qui pouvait se déclarer « parrainé » par quelqu'un et empêcher cette personne de supprimer son compte ; un compte de vigile ayant scanné ne pouvait plus être supprimé | Migration 0005, tests F1 ; sondé : suppression HTTP 500 **avant**, 200 **après** |
 | **Colonnes commerciales masquées** | Commission et compte Stripe illisibles par l'API ; seuls managers et équipe Outly les lisent via une fonction | 0003 (H5), tests H5 |
 | **CAPTCHA anti-robots (prêt, à activer)** | Cloudflare Turnstile sur inscription, connexion, code email et mot de passe oublié ; jeton à usage unique, widget réinitialisé après chaque tentative ; **sans clé configurée, le site marche comme avant** | Testé en local avec les clés de test officielles : inscription OK avec un CAPTCHA valide, **compte refusé quand le serveur rejette le CAPTCHA**, **appel direct à l'API sans CAPTCHA refusé** |
 | **Connexion durcie** | Mots de passe 8+ caractères avec lettres et chiffres ; codes email valables 10 min ; 1 email d'authentification par minute et par personne ; changement de mot de passe après reconnexion récente | `supabase/config.toml`, vérifié sur la base locale |
@@ -69,6 +71,8 @@
 | Surfaces Supabase inutilisées en production : GraphQL (`pg_graphql`, actif par défaut sur un projet hébergé), canaux Realtime publics, schéma OpenAPI lisible avec la clé publique | Faible | Désactiver `pg_graphql` et les canaux Realtime publics (*Realtime → Settings*) s'ils restent inutilisés ; la RLS protège de toute façon les données | Équipe tech |
 | CSP : styles en ligne autorisés (`'unsafe-inline'` dans `style-src`, imposé par React Native Web) ; le lecteur QR de secours télécharge son WebAssembly depuis `fastly.jsdelivr.net` (CDN tiers, version figée) | Faible | Le CSS ne peut pas exécuter de script. Pour supprimer le CDN : héberger `zxing_reader.wasm` sur le site équipe (§ 9) | Équipe tech |
 | Session du personnel : un jeton de rafraîchissement reste valable tant qu'il sert (pas de durée maximale de session) | Moyenne (téléphone volé) | Déconnexion + mot de passe changé + comptes désactivés le lendemain (§ 5) ; *Auth → Sessions → inactivity timeout* (offre Pro) si besoin | Équipe tech |
+| Un signalement peut être créé directement avec un statut « traité » (`reports.status`, `handled_by`) : il n'apparaîtrait pas dans une file filtrée sur « ouvert ». Seul l'auteur se nuit à lui-même | Faible | Avec l'admin : forcer `status = 'open'` à la création (déclencheur ou droits par colonne) | Équipe tech |
+| Le déclencheur de 0004 bloque **toute** modification des colonnes protégées par un utilisateur connecté, même via une fonction `SECURITY DEFINER` : une future fonction « utiliser un code de parrainage » devra passer par le serveur (clé service) ou adapter le déclencheur | Info | À prévoir avec la fonctionnalité de parrainage | Équipe tech |
 | Supprimer (masquer) un de ses messages de groupe échoue aujourd'hui (la base refuse la ligne devenue invisible) — bug sans effet en V1, les groupes sont masqués | Faible | À corriger avec le chantier des groupes (une fonction `delete_message`) | Équipe tech |
 
 ## 5. Liste de contrôle avant la mise en ligne
@@ -85,7 +89,7 @@
 - [ ] Limites de débit adaptées au soir de Rouge (§ 4) : inscriptions / connexions par IP, vérifications de code par IP, et **emails par heure (≥ 500)**.
 - [ ] *Redirect URLs* : uniquement `https://<site client>/**` (pas `exp://**`, pas `localhost`) ; *Site URL* = le site client.
 - [ ] `pg_graphql` désactivé et canaux Realtime publics désactivés s'ils ne servent pas.
-- [ ] Migration `0004` appliquée (colonnes protégées).
+- [ ] Migrations `0004` (colonnes protégées) et `0005` (un pass par personne, suppression de compte jamais bloquée) appliquées.
 - [ ] *Leaked password protection* activée si disponible.
 - [ ] SMTP Resend sur le domaine, avec **SPF, DKIM et DMARC** (sinon les codes finissent en spam, et le domaine peut être usurpé).
 - [ ] Secrets des fonctions : `ALLOWED_ORIGINS` = les adresses exactes des sites. La clé service n'existe **nulle part ailleurs** que dans Supabase.
@@ -159,13 +163,15 @@ Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval
 | `object-src 'none'`, `base-uri 'self'`, `form-action 'self'` | Pas de plugins ; une balise `<base>` injectée ne peut pas détourner les scripts ; pas d'envoi de formulaire ailleurs |
 | `frame-ancestors 'none'` | Personne ne peut afficher le site dans un cadre (anti-clickjacking). **Fonctionne seulement en en-tête HTTP**, pas en `<meta>` |
 
-**Mettre en place** (l'orchestrateur colle les chaînes ci-dessus) :
-- Cloudflare Pages — `apps/<site>/public/_headers` (copié dans le site compilé) :
+**Mettre en place** (l'orchestrateur colle les chaînes ci-dessus, **sans** le préfixe `Content-Security-Policy: ` dans `value`) — site client dans `apps/customer/…`, site équipe dans `apps/partner/…` :
+- Cloudflare Pages — `apps/<site>/public/_headers` (copié dans le site compilé) : une ligne dans le bloc `/*` existant (remplacer la ligne de commentaire `# >>> Content-Security-Policy goes here …` du chantier A) :
   ```
   /*
     Content-Security-Policy: <politique du site>
   ```
-- Vercel — `apps/<site>/vercel.json` : `{"headers": [{"source": "/(.*)", "headers": [{"key": "Content-Security-Policy", "value": "<politique du site>"}]}]}`
+  Une seule ligne CSP par fichier (un deuxième bloc avec une autre CSP fait échouer `pnpm check:csp`).
+- Vercel — `apps/<site>/vercel.json` : ajouter `{ "key": "Content-Security-Policy", "value": "<politique du site>" }` dans le tableau `headers` de l'entrée `"source": "/(.*)"` existante. Garder l'ordre `key` puis `value` (sinon `pnpm check:csp` ne trouve pas l'en-tête et échoue).
+- Puis `pnpm check:csp` (doit dire « 4 hosting file(s) ») et **relancer `pnpm security:csp`** : le gabarit `public/index.html` du chantier A change la page servie.
 - `pnpm check:csp` (aussi en CI) vérifie que ces fichiers portent **exactement** la politique testée, que la politique garde ses propriétés de sécurité, et que l'URL du WebAssembly correspond à la version de `zxing-wasm` installée.
 - Une fois le projet Supabase de production créé, on peut remplacer `*.supabase.co` par l'adresse exacte du projet : `buildCsp('customer', { supabaseUrl: 'https://<ref>.supabase.co' })` (accepté par `pnpm check:csp`). C'est plus strict : un script injecté ne pourrait plus envoyer de données vers un autre projet Supabase.
 
