@@ -21,7 +21,8 @@ insert into auth.users (id, email) values
  ('c3000000-0000-4000-a000-000000000002','p.other@demo.outly'),
  ('c3000000-0000-4000-a000-000000000003','p.puppet@demo.outly'),
  ('c3000000-0000-4000-a000-000000000004','p.support@demo.outly'),
- ('c3000000-0000-4000-a000-000000000005','p.new@demo.outly');
+ ('c3000000-0000-4000-a000-000000000005','p.new@demo.outly'),
+ ('c3000000-0000-4000-a000-000000000006','p.ref@demo.outly');
 insert into profiles (id, username, display_name, date_of_birth) values
  ('c3000000-0000-4000-a000-000000000001','p_guest','Pia','2000-01-01'),
  ('c3000000-0000-4000-a000-000000000002','p_other','Paul','2000-01-01'),
@@ -30,10 +31,12 @@ insert into profiles (id, username, display_name, date_of_birth) values
 insert into outly_staff (user_id, role) values ('c3000000-0000-4000-a000-000000000004','outly_support');
 insert into squads (id, name, created_by) values
  ('93000000-0000-4000-a000-000000000001','Mine','c3000000-0000-4000-a000-000000000001'),
- ('93000000-0000-4000-a000-000000000002','Theirs','c3000000-0000-4000-a000-000000000002');
+ ('93000000-0000-4000-a000-000000000002','Theirs','c3000000-0000-4000-a000-000000000002'),
+ ('93000000-0000-4000-a000-000000000003','Mine too','c3000000-0000-4000-a000-000000000001');
 insert into squad_members (squad_id, user_id, is_admin) values
  ('93000000-0000-4000-a000-000000000001','c3000000-0000-4000-a000-000000000001', true),
- ('93000000-0000-4000-a000-000000000002','c3000000-0000-4000-a000-000000000002', true);
+ ('93000000-0000-4000-a000-000000000002','c3000000-0000-4000-a000-000000000002', true),
+ ('93000000-0000-4000-a000-000000000003','c3000000-0000-4000-a000-000000000001', true);
 insert into messages (id, squad_id, sender_id, body) values
  ('94000000-0000-4000-a000-000000000001','93000000-0000-4000-a000-000000000001','c3000000-0000-4000-a000-000000000001','hello');
 
@@ -98,6 +101,48 @@ do $$ begin
   raise notice 'P1d ok: normal sign-up profile works, forged one refused';
 end $$;
 
+-- P1g: on sign-up a user cannot name a referrer (it blocked that person's account deletion),
+-- choose their referral code or back-date their profile
+select pg_temp.as_user('c3000000-0000-4000-a000-000000000006');
+do $$ begin
+  begin
+    insert into profiles (id, username, display_name, date_of_birth, referred_by)
+    values ('c3000000-0000-4000-a000-000000000006','p_ref','Ref','2000-01-01','c3000000-0000-4000-a000-000000000003');
+    raise exception 'P1g FAILED: referred_by set on insert';
+  exception when raise_exception then
+    if sqlerrm <> 'OUTLY_FORBIDDEN_COLUMN' then raise exception 'P1g FAILED: %', sqlerrm; end if;
+  end;
+  insert into profiles (id, username, display_name, date_of_birth, referral_code, created_at)
+  values ('c3000000-0000-4000-a000-000000000006','p_ref','Ref','2000-01-01','OUTLYVIP', '2020-01-01');
+end $$;
+select pg_temp.as_service();
+do $$ declare p profiles; begin
+  select * into p from profiles where id = 'c3000000-0000-4000-a000-000000000006';
+  if p.referral_code = 'OUTLYVIP' or p.referral_code !~ '^[0-9A-F]{8}$' then raise exception 'P1g FAILED: chosen referral code %', p.referral_code; end if;
+  if p.created_at < now() - interval '1 minute' then raise exception 'P1g FAILED: back-dated profile'; end if;
+  raise notice 'P1g ok: referrer, referral code and creation date are not chosen by the user';
+end $$;
+
+-- P1h: an upsert (INSERT ... ON CONFLICT DO UPDATE, PostgREST "merge-duplicates") cannot lift a suspension
+update profiles set suspended_at = now() where id = 'c3000000-0000-4000-a000-000000000003';
+select pg_temp.as_user('c3000000-0000-4000-a000-000000000003');
+do $$ begin
+  begin
+    insert into profiles (id, username, display_name, date_of_birth)
+    values ('c3000000-0000-4000-a000-000000000003','p_puppet','Puppet','2000-01-01')
+    on conflict (id) do update set suspended_at = excluded.suspended_at, display_name = excluded.display_name;
+    raise exception 'P1h FAILED: upsert accepted';
+  exception when raise_exception then
+    if sqlerrm <> 'OUTLY_FORBIDDEN_COLUMN' then raise exception 'P1h FAILED: %', sqlerrm; end if;
+  end;
+end $$;
+select pg_temp.as_service();
+do $$ begin
+  if not private.is_suspended('c3000000-0000-4000-a000-000000000003') then raise exception 'P1h FAILED: no longer suspended'; end if;
+  update profiles set suspended_at = null where id = 'c3000000-0000-4000-a000-000000000003';
+  raise notice 'P1h ok: an upsert cannot lift a suspension';
+end $$;
+
 -- P1e: Outly support can still suspend and unsuspend (moderation through the API)
 select pg_temp.as_user('c3000000-0000-4000-a000-000000000004');
 do $$ declare s timestamptz; begin
@@ -141,11 +186,11 @@ do $$ begin
   raise notice 'P2 ok: accepting works; the requester cannot be swapped';
 end $$;
 
--- P3: a sender cannot move a message into another squad or change its author
+-- P3: a sender cannot move a message into another squad (even one of theirs) or re-date it
 select pg_temp.as_user('c3000000-0000-4000-a000-000000000001');
 do $$ begin
   begin
-    update messages set squad_id = '93000000-0000-4000-a000-000000000002' where id = '94000000-0000-4000-a000-000000000001';
+    update messages set squad_id = '93000000-0000-4000-a000-000000000003' where id = '94000000-0000-4000-a000-000000000001';
     raise exception 'P3a FAILED: message moved to another squad';
   exception when insufficient_privilege then null;
   end;

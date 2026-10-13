@@ -9,8 +9,11 @@
 --       their tier / no-show count / referral data.
 --   P2. friendships: the addressee of a request could rewrite requester_id while
 --       accepting it, creating an accepted friendship with anyone, without their consent.
---   P3. messages: a sender could move their message into a squad they are not in
---       (squad_id), or change its author / date.
+--   P3. messages: a sender could re-date their message (created_at) or move it into
+--       another of their squads (squad_id). (Moving it into a squad they are not in, or
+--       changing its author, was already refused by RLS.)
+--   Review fix: on INSERT a user could also set referred_by to anyone (which blocked
+--   that person's account deletion), pick their referral_code and back-date created_at.
 -- Append-only: 0001–0003 are untouched.
 -- =====================================================================
 
@@ -27,10 +30,15 @@ begin
     return new;
   end if;
   if tg_op = 'INSERT' then
+    -- referred_by: pointing it at someone used to block THEIR account deletion
+    -- (profiles_referred_by_fkey, see 0005) and would fake a referral.
     if new.suspended_at is not null or new.id_verified_at is not null
-       or new.no_show_count <> 0 or new.tier <> 'bronze' then
+       or new.no_show_count <> 0 or new.tier <> 'bronze' or new.referred_by is not null then
       raise exception 'OUTLY_FORBIDDEN_COLUMN';
     end if;
+    -- A trigger cannot tell a default from a value the client sent: always use the defaults.
+    new.created_at    := now();
+    new.referral_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
   elsif new.suspended_at   is distinct from old.suspended_at
      or new.id_verified_at is distinct from old.id_verified_at
      or new.no_show_count  is distinct from old.no_show_count
