@@ -17,7 +17,11 @@ const VALUE_PATTERNS = [
   ['Anthropic API key', /\bsk-ant-[A-Za-z0-9_-]{20,}/],
   ['Google API key', /\bAIza[0-9A-Za-z_-]{30,}/],
   ['GitHub token', /\b(gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,})/],
-  ['Resend API key', /\bre_[A-Za-z0-9]{20,}_[A-Za-z0-9]{10,}/],
+  ['Resend API key', /\bre_[A-Za-z0-9]{6,}_[A-Za-z0-9]{16,}/],
+  // Turnstile SECRET keys are 35 characters (site keys, which are public, are ~24): a secret pasted
+  // into EXPO_PUBLIC_TURNSTILE_SITE_KEY would end up in the customer site.
+  ['Cloudflare Turnstile secret key', /\b[0-9]x[0-9A-Za-z_-]{33}\b/],
+  ['Google OAuth client secret', /\bGOCSPX-[A-Za-z0-9_-]{20,}/],
   ['Private key', /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   ['Database URL with password', /postgres(ql)?:\/\/[^:\s"']+:[^@\s"']+@/],
 ];
