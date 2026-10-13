@@ -19,3 +19,5 @@ expo-env.d.ts
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+# Real launch content (venue address, staff emails): local files only, never committed.
+content/*.local.*
