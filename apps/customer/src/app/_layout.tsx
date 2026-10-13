@@ -6,23 +6,49 @@ import {
   PlusJakartaSans_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { colors } from '@outly/ui';
+import { Button, EmptyState, Screen, colors } from '@outly/ui';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from '@/lib/auth';
 
 void SplashScreen.preventAutoHideAsync();
 
+/** Signed in, but the profile didn't load (no network): retry instead of asking to create one. */
+function ProfileUnavailable() {
+  const { refreshProfile, signOut } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const retry = async () => {
+    setBusy(true);
+    await refreshProfile();
+    setBusy(false);
+  };
+  return (
+    <Screen scroll={false} edges={['top', 'bottom']}>
+      <EmptyState
+        title="Can’t reach Outly"
+        message="We couldn’t load your profile. Check your connection and try again."
+        action={
+          <>
+            <Button label="Try again" onPress={retry} loading={busy} />
+            <Button label="Log out" variant="ghost" onPress={signOut} />
+          </>
+        }
+      />
+    </Screen>
+  );
+}
+
 function RootStack() {
-  const { ready, session, profile } = useAuth();
+  const { ready, session, profile, profileFailed } = useAuth();
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
 
   if (!ready) return null;
+  if (session && !profile && profileFailed) return <ProfileUnavailable />;
 
   const signedIn = !!session;
   const hasProfile = signedIn && !!profile;

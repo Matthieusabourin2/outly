@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-/** Bottom sheet: tap outside or the Android back button to close. */
+/** Bottom sheet: tap outside, the Android back button or Escape (web) to close. */
 export function Sheet({ visible, onClose, children }: { visible: boolean; onClose: () => void; children: ReactNode }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close" />
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
       <SafeAreaView edges={['bottom']} style={styles.sheet}>
         <View style={styles.handle} />
         <View style={styles.content}>{children}</View>

@@ -8,11 +8,14 @@ import { supabase } from './supabase';
 
 const REFRESH_MS = 15_000;
 
+/** Offline banner on the guest site: what still works. */
+export const OFFLINE_GUEST_MESSAGE = 'Your pass still shows if it loaded before. The rest may be out of date.';
+
 async function fetchNight() {
   const { data, error } = await supabase
     .from('guest_lists')
     .select(
-      'id, night, capacity, venue:venues(id, name, address), event:events(id, title, description, starts_at, ends_at, sets:event_sets(id, artist_name, stage, starts_at, ends_at, sort))',
+      'id, night, capacity, closes_at, venue:venues(id, name, address), event:events(id, title, description, starts_at, ends_at, sets:event_sets(id, artist_name, stage, starts_at, ends_at, sort))',
     )
     .not('event_id', 'is', null)
     .gte('night', sydneyNight())
@@ -48,20 +51,35 @@ type State = {
 
 const EMPTY: State = { loading: true, error: null, night: null, stats: null, booking: null, attendees: [], offer: null };
 
+/**
+ * Last good answer, shared by the Night, Pass and Profile tabs: a tab opened while the
+ * connection drops still shows the pass instead of "No pass yet".
+ */
+let lastGood: { userId: string; state: State } | null = null;
+
+/** True once the guest list's own closing time has passed (A4: normally open all night). */
+export function isListClosed(closesAt: string | null | undefined, now: Date = new Date()): boolean {
+  return !!closesAt && now.getTime() > new Date(closesAt).getTime();
+}
+
 /** Everything the Night and Pass tabs show, refreshed while the screen is focused. */
 export function useNight() {
   const { session } = useAuth();
-  const [state, setState] = useState<State>(EMPTY);
   const userId = session?.user.id;
+  const [state, setState] = useState<State>(() => (lastGood && lastGood.userId === userId ? lastGood.state : EMPTY));
   const busy = useRef(false);
 
   const load = useCallback(async () => {
     if (!userId || busy.current) return;
     busy.current = true;
+    const save = (next: State) => {
+      lastGood = { userId, state: next };
+      setState(next);
+    };
     try {
       const night = await fetchNight();
       if (!night) {
-        setState({ ...EMPTY, loading: false });
+        save({ ...EMPTY, loading: false });
         return;
       }
       const [stats, booking, offer] = await Promise.all([
@@ -96,7 +114,7 @@ export function useNight() {
         if (a.error) throw a.error;
         attendees = a.data;
       }
-      setState({
+      save({
         loading: false,
         error: null,
         night,

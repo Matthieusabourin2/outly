@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { toUserMessage } from '@outly/core';
-import { Avatar, Button, Text, TextField, colors, radii, spacing } from '@outly/ui';
+import { Avatar, Button, FormError, Text, TextField, colors, layout, radii, spacing } from '@outly/ui';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
@@ -29,8 +29,9 @@ export function AttendeeRow({ attendee, onChanged }: { attendee: Attendee; onCha
   };
 
   const report = async () => {
-    if (!me) return;
+    if (!me || busy) return;
     setBusy(true);
+    setError(null);
     const { error: e } = await supabase.from('reports').insert({ reporter_id: me, reported_user_id: attendee.user_id, reason: reason.trim() });
     setBusy(false);
     if (e) return setError(toUserMessage(e));
@@ -39,8 +40,9 @@ export function AttendeeRow({ attendee, onChanged }: { attendee: Attendee; onCha
   };
 
   const block = async () => {
-    if (!me) return;
+    if (!me || busy) return;
     setBusy(true);
+    setError(null);
     const { error: e } = await supabase.from('blocks').insert({ blocker_id: me, blocked_id: attendee.user_id });
     setBusy(false);
     if (e && e.code !== '23505') return setError(toUserMessage(e));
@@ -56,7 +58,7 @@ export function AttendeeRow({ attendee, onChanged }: { attendee: Attendee; onCha
         <Text variant="bodyStrong" style={styles.name} numberOfLines={1}>
           @{attendee.username}
         </Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Options for @${attendee.username}`} onPress={() => setOpen(true)} style={styles.more} hitSlop={8}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Options for @${attendee.username}`} onPress={() => setOpen(true)} style={styles.more}>
           <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -72,14 +74,14 @@ export function AttendeeRow({ attendee, onChanged }: { attendee: Attendee; onCha
         ) : step === 'report' ? (
           <>
             <TextField label="What happened?" value={reason} onChangeText={setReason} multiline placeholder="Tell us briefly" style={styles.multiline} />
-            {error ? <Text tone="danger">{error}</Text> : null}
+            <FormError>{error}</FormError>
             <Button label="Send report" onPress={report} loading={busy} disabled={reason.trim().length < 3} />
             <Button label="Back" variant="ghost" onPress={() => setStep('menu')} />
           </>
         ) : step === 'block' ? (
           <>
             <Text tone="secondary">You won’t see each other on attendee lists. They are not told you blocked them.</Text>
-            {error ? <Text tone="danger">{error}</Text> : null}
+            <FormError>{error}</FormError>
             <Button label={`Block @${attendee.username}`} variant="danger" onPress={block} loading={busy} />
             <Button label="Back" variant="ghost" onPress={() => setStep('menu')} />
           </>
@@ -97,6 +99,6 @@ export function AttendeeRow({ attendee, onChanged }: { attendee: Attendee; onCha
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2] },
   name: { flex: 1 },
-  more: { width: 40, height: 40, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
+  more: { width: layout.minTouch, height: layout.minTouch, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
   multiline: { minHeight: 96, paddingTop: spacing[3], textAlignVertical: 'top' },
 });
