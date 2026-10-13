@@ -114,17 +114,14 @@ do $$ declare b bookings; gl uuid; begin
   end;
 end $$;
 select pg_temp.as_user('33333333-3333-4333-a333-333333333333');
-do $$ declare b bookings; bid uuid := current_setting('outly.test_booking')::uuid; n uuid := current_setting('outly.test_nonce')::uuid; begin
-  b := check_in(bid, n);
-  if b.status <> 'checked_in' then raise exception 'T5c FAILED'; end if;
+do $$ declare r record; bid uuid := current_setting('outly.test_booking')::uuid; n uuid := current_setting('outly.test_nonce')::uuid; begin
+  -- Door check-in goes through scan_pass (check_in is closed to users since 0006).
+  select * into r from scan_pass('00000000-0000-4000-a000-000000000001', 'OUTLY1:' || bid || ':' || n);
+  if r.result <> 'ok' then raise exception 'T5c FAILED: %', r.result; end if;
   raise notice 'T5c ok: door checked in';
-  begin
-    perform check_in(bid, n);
-    raise exception 'T5d FAILED: nonce reused';
-  exception when raise_exception then
-    if sqlerrm like 'T5d%' then raise; end if;
-    raise notice 'T5d ok: screenshot reuse refused (%)', sqlerrm;
-  end;
+  select * into r from scan_pass('00000000-0000-4000-a000-000000000001', 'OUTLY1:' || bid || ':' || n);
+  if r.result <> 'already_used' then raise exception 'T5d FAILED: nonce reused (%)', r.result; end if;
+  raise notice 'T5d ok: screenshot reuse refused (already_used)';
 end $$;
 rollback;
 

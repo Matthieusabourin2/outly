@@ -854,13 +854,13 @@ isOneToOne: false
                   ]
                 },"scan_events": {
                   Row: {
-                    "booking_id": string | null,"created_at": string,"deal_id": string | null,"guest_list_id": string | null,"id": number,"kind": string,"result": Database["public"]['Enums']["scan_result"],"scanned_by": string,"venue_id": string
+                    "booking_id": string | null,"created_at": string,"deal_id": string | null,"guest_list_id": string | null,"id": number,"kind": string,"result": Database["public"]['Enums']["scan_result"],"scanned_by": string | null,"venue_id": string
                   }
                   Insert: {
-                    "booking_id"?: string | null,"created_at"?: string,"deal_id"?: string | null,"guest_list_id"?: string | null,"id"?: never,"kind"?: string,"result": Database["public"]['Enums']["scan_result"],"scanned_by": string,"venue_id": string
+                    "booking_id"?: string | null,"created_at"?: string,"deal_id"?: string | null,"guest_list_id"?: string | null,"id"?: never,"kind"?: string,"result": Database["public"]['Enums']["scan_result"],"scanned_by"?: string | null,"venue_id": string
                   }
                   Update: {
-                    "booking_id"?: string | null,"created_at"?: string,"deal_id"?: string | null,"guest_list_id"?: string | null,"id"?: never,"kind"?: string,"result"?: Database["public"]['Enums']["scan_result"],"scanned_by"?: string,"venue_id"?: string
+                    "booking_id"?: string | null,"created_at"?: string,"deal_id"?: string | null,"guest_list_id"?: string | null,"id"?: never,"kind"?: string,"result"?: Database["public"]['Enums']["scan_result"],"scanned_by"?: string | null,"venue_id"?: string
                   }
                   Relationships: [
                     {

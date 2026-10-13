@@ -79,7 +79,7 @@ end $$;
 select pg_temp.as_service();
 do $$ declare f text; bad text := ''; begin
   foreach f in array array[
-    'public.decide_booking(uuid,boolean)', 'public.check_in(uuid,uuid)', 'public.cancel_booking(uuid)',
+    'public.decide_booking(uuid,boolean)', 'public.cancel_booking(uuid)',
     'public.join_event_list(uuid,attendee_visibility)', 'public.set_attendee_visibility(uuid,attendee_visibility)',
     'public.guest_list_stats(uuid)', 'public.event_attendees(uuid)', 'public.scan_pass(uuid,text)',
     'public.redeem_offer(uuid,uuid,text)', 'public.venue_live_stats(uuid,date)', 'public.venue_activity(uuid,integer)',
@@ -89,7 +89,7 @@ do $$ declare f text; bad text := ''; begin
     if not has_function_privilege('authenticated', f, 'execute') then bad := bad || ' authenticated-missing:' || f; end if;
   end loop;
   if bad <> '' then raise exception 'H2 FAILED:%', bad; end if;
-  raise notice 'H2 ok: 13 RPCs closed to anon, open to signed-in users';
+  raise notice 'H2 ok: 12 RPCs closed to anon, open to signed-in users (check_in: closed to all, 0006)';
 end $$;
 
 -- H3: public_profiles exposes usernames only, to signed-in users only
