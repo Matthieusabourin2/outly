@@ -22,7 +22,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         {...rest}
       />
       {error ? (
-        <Text variant="caption" tone="danger">
+        <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : hint ? (

@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import type { Enums } from '@outly/db';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { supabase } from './supabase';
 
 export type VenueRole = Enums<'venue_role'>;
@@ -28,6 +28,9 @@ type StaffState = {
   ready: boolean;
   session: Session | null;
   memberships: Membership[];
+  /** The venues could not be loaded (network): not the same as "no venue on this account". */
+  loadFailed: boolean;
+  retry: () => Promise<void>;
   current: Membership | null;
   selectVenue: (venueId: string) => void;
   signOut: () => Promise<void>;
@@ -47,23 +50,62 @@ async function loadMemberships(userId: string): Promise<Membership[]> {
     .sort((a, b) => a.venueName.localeCompare(b.venueName));
 }
 
+const VENUE_KEY = 'outly.staff.venue';
+
+/** The venue a multi-venue manager picked survives a page reload (web only, best effort). */
+function rememberedVenue(): string | null {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(VENUE_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+function rememberVenue(venueId: string) {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(VENUE_KEY, venueId);
+  } catch {
+    // Private browsing: just not remembered.
+  }
+}
+
 export function StaffProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [venueId, setVenueId] = useState<string | null>(null);
+  const loadedFor = useRef<string | null>(null);
 
   const sync = useCallback(async (next: Session | null) => {
-    setSession(next);
     try {
       const list = next ? await loadMemberships(next.user.id) : [];
+      loadedFor.current = next?.user.id ?? null;
       setMemberships(list);
-      setVenueId((prev) => (prev && list.some((m) => m.venueId === prev) ? prev : (list[0]?.venueId ?? null)));
+      setLoadFailed(false);
+      const saved = rememberedVenue();
+      setVenueId((prev) =>
+        prev && list.some((m) => m.venueId === prev)
+          ? prev
+          : saved && list.some((m) => m.venueId === saved)
+            ? saved
+            : (list[0]?.venueId ?? null),
+      );
     } catch (e) {
       console.warn('[staff] memberships', e);
-      setMemberships([]);
+      // Keep what we had for this person (a refresh failed); never show "no venue" because of the network.
+      if (loadedFor.current !== next?.user.id) {
+        loadedFor.current = null;
+        setMemberships([]);
+      }
+      setLoadFailed(true);
     }
+    setSession(next);
     setReady(true);
+  }, []);
+
+  const selectVenue = useCallback((id: string) => {
+    rememberVenue(id);
+    setVenueId(id);
   }, []);
 
   useEffect(() => {
@@ -80,13 +122,19 @@ export function StaffProvider({ children }: { children: ReactNode }) {
       ready,
       session,
       memberships,
+      loadFailed,
+      retry: async () => {
+        const { data } = await supabase.auth.getSession();
+        await sync(data.session);
+      },
       current: memberships.find((m) => m.venueId === venueId) ?? null,
-      selectVenue: setVenueId,
+      selectVenue,
+      // Works offline too: supabase-js clears the session on this device whatever the server says.
       signOut: async () => {
         await supabase.auth.signOut();
       },
     }),
-    [ready, session, memberships, venueId],
+    [ready, session, memberships, loadFailed, venueId, selectVenue, sync],
   );
 
   return <StaffContext.Provider value={value}>{children}</StaffContext.Provider>;

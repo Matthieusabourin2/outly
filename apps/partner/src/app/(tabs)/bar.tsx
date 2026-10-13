@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { EmptyState, Screen, colors } from '@outly/ui';
+import { Button, EmptyState, Screen, colors, spacing } from '@outly/ui';
 import { useCallback } from 'react';
+import { ActivityIndicator } from 'react-native';
 import { Scanner, type ScanResult } from '@/components/Scanner';
 import { BAR_TEXT } from '@/lib/scanText';
 import { useStaff } from '@/lib/staff';
@@ -10,7 +11,7 @@ import { useTonight } from '@/lib/tonight';
 /** Bar: one Outly drinks offer per pass per night, only while the offer is switched on. */
 export default function BarScanScreen() {
   const { current } = useStaff();
-  const { offer, loading } = useTonight();
+  const { offer, loading, error, reload } = useTonight();
   const venueId = current?.venueId;
   const offerId = offer?.id;
 
@@ -28,7 +29,16 @@ export default function BarScanScreen() {
   if (!offer) {
     return (
       <Screen scroll={false}>
-        {loading ? null : (
+        {loading ? (
+          <ActivityIndicator color={colors.accent} style={{ marginTop: spacing[12] }} accessibilityLabel="Loading" />
+        ) : error ? (
+          <EmptyState
+            icon={<Ionicons name="cloud-offline-outline" size={44} color={colors.accent} />}
+            title="Can’t load tonight’s offer"
+            message={error}
+            action={<Button label="Try again" variant="secondary" onPress={reload} />}
+          />
+        ) : (
           <EmptyState
             icon={<Ionicons name="wine-outline" size={44} color={colors.accent} />}
             title="No Outly drinks offer tonight"

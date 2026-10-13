@@ -1,38 +1,59 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { isNightOver, sydneyDay, sydneyTime, toUserMessage } from '@outly/core';
+import { OUTLY_ERROR_MESSAGES, getOutlyErrorCode, isNightOver, sydneyDay, sydneyTime, toUserMessage } from '@outly/core';
 import type { Enums } from '@outly/db';
-import { Avatar, Button, Card, EmptyState, Screen, SourceLabel, Text, colors, radii, spacing } from '@outly/ui';
+import { Avatar, Button, Card, EmptyState, FormError, OfflineBanner, Screen, SourceLabel, Text, colors, radii, spacing, useOnline } from '@outly/ui';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AttendeeRow } from '@/components/AttendeeRow';
 import { Sheet } from '@/components/Sheet';
 import { VisibilityChoice } from '@/components/VisibilityChoice';
 import { useAuth } from '@/lib/auth';
-import { useNight } from '@/lib/night';
+import { OFFLINE_GUEST_MESSAGE, isListClosed, useNight } from '@/lib/night';
 import { supabase } from '@/lib/supabase';
 
 /** Shown under every drinks offer (responsible service, SPEC §10). */
 const OFFER_REMINDER = 'Show your Outly pass at the bar. Please drink responsibly.';
 
 export default function NightScreen() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { loading, error, night, stats, booking, attendees, offer, reload } = useNight();
+  const online = useOnline();
   const [joinOpen, setJoinOpen] = useState(false);
   const [visibility, setVisibility] = useState<Enums<'attendee_visibility'>>('ghost');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [blockedName, setBlockedName] = useState<string | null>(null);
+  // A double tap fires twice before React re-renders the button as busy: one request at a time.
+  const joinInFlight = useRef(false);
+
+  const openJoin = () => {
+    setJoinError(null);
+    setJoinOpen(true);
+  };
 
   const join = async () => {
-    if (!night) return;
+    if (!night || joinInFlight.current) return;
+    joinInFlight.current = true;
     setJoining(true);
     setJoinError(null);
-    const { error: e } = await supabase.rpc('join_event_list', { p_guest_list_id: night.id, p_visibility: visibility });
-    setJoining(false);
-    if (e) return setJoinError(toUserMessage(e));
-    setJoinOpen(false);
-    await reload();
-    router.navigate('/pass');
+    try {
+      const { error: e } = await supabase.rpc('join_event_list', { p_guest_list_id: night.id, p_visibility: visibility });
+      const code = e ? getOutlyErrorCode(e) : null;
+      // Already on the list (joined from another tab or device): same outcome as a join.
+      if (e && code !== 'OUTLY_ALREADY_ON_LIST') {
+        setJoinError(toUserMessage(e));
+        if (code === 'OUTLY_SUSPENDED') await refreshProfile();
+        if (code === 'OUTLY_LIST_FULL' || code === 'OUTLY_LIST_CLOSED') await reload();
+        return;
+      }
+      setJoinOpen(false);
+      await reload();
+      router.navigate('/pass');
+    } finally {
+      joinInFlight.current = false;
+      setJoining(false);
+    }
   };
 
   if (loading) {
@@ -46,9 +67,10 @@ export default function NightScreen() {
   if (!night) {
     return (
       <Screen scroll={false}>
+        <OfflineBanner message={OFFLINE_GUEST_MESSAGE} />
         <EmptyState
           icon={<Ionicons name="moon-outline" size={44} color={colors.accent} />}
-          title="No Outly night yet"
+          title={error ? 'Can’t load the night' : 'No Outly night yet'}
           message={error ?? 'The next Outly night will show up here.'}
           action={error ? <Button label="Try again" variant="secondary" onPress={reload} /> : undefined}
         />
@@ -60,10 +82,14 @@ export default function NightScreen() {
   const sets = [...(event?.sets ?? [])].sort((a, b) => a.sort - b.sort);
   const full = !!stats && stats.remaining <= 0;
   const over = isNightOver(event?.starts_at, event?.ends_at);
+  const closed = isListClosed(night.closes_at);
+  const suspended = !!profile?.suspended_at;
   const progress = stats && stats.capacity > 0 ? Math.min(1, stats.joined / stats.capacity) : 0;
 
   return (
     <Screen>
+      <OfflineBanner message={OFFLINE_GUEST_MESSAGE} />
+      {error && online ? <FormError>{`Couldn’t refresh. ${error}`}</FormError> : null}
       <View style={styles.top}>
         <Text variant="h2">
           outly<Text variant="h2" style={{ color: colors.primary }}>.</Text>
@@ -76,7 +102,9 @@ export default function NightScreen() {
           {sydneyDay(night.night).toUpperCase()}
           {event?.starts_at ? ` · FROM ${sydneyTime(event.starts_at).toUpperCase()}` : ''}
         </Text>
-        <Text variant="display">{night.venue?.name ?? event?.title}</Text>
+        <Text variant="display" accessibilityRole="header">
+          {night.venue?.name ?? event?.title}
+        </Text>
         {night.venue?.address ? <Text tone="secondary">{night.venue.address}</Text> : null}
         {event?.title && night.venue?.name ? <Text tone="secondary">{event.title}</Text> : null}
       </Card>
@@ -99,7 +127,14 @@ export default function NightScreen() {
               <Text variant="bodyStrong">{stats.joined}</Text> / {stats.capacity}
             </Text>
           </View>
-          <View style={styles.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: stats.capacity, now: stats.joined }}>
+          <View
+            style={styles.track}
+            accessibilityRole="progressbar"
+            accessibilityLabel="Places taken on the Outly list"
+            aria-valuemin={0}
+            aria-valuemax={stats.capacity}
+            aria-valuenow={stats.joined}
+          >
             <View style={[styles.fill, { width: `${progress * 100}%` }]} />
           </View>
         </View>
@@ -110,6 +145,11 @@ export default function NightScreen() {
           <Text variant="bodyStrong">This night is over</Text>
           <Text tone="secondary">Thanks for coming. The next Outly night will show up here.</Text>
         </Card>
+      ) : suspended ? (
+        <Card>
+          <Text variant="bodyStrong">You can’t join the Outly list</Text>
+          <Text tone="secondary">{OUTLY_ERROR_MESSAGES.OUTLY_SUSPENDED}</Text>
+        </Card>
       ) : booking ? (
         <Button label={booking.status === 'checked_in' ? "You're in. See your pass" : 'Show my pass'} onPress={() => router.navigate('/pass')} />
       ) : full ? (
@@ -117,8 +157,13 @@ export default function NightScreen() {
           <Text variant="bodyStrong">The Outly list is full</Text>
           <Text tone="secondary">You can still get in through the normal line with your ticket.</Text>
         </Card>
+      ) : closed ? (
+        <Card>
+          <Text variant="bodyStrong">The Outly list is closed</Text>
+          <Text tone="secondary">You can still get in through the normal line with your ticket.</Text>
+        </Card>
       ) : (
-        <Button label="Join the Outly list" onPress={() => setJoinOpen(true)} />
+        <Button label="Join the Outly list" onPress={openJoin} />
       )}
 
       {offer && !over ? (
@@ -138,7 +183,9 @@ export default function NightScreen() {
       ) : null}
 
       <View style={styles.section}>
-        <Text variant="h2">Line-up</Text>
+        <Text variant="h2" accessibilityRole="header">
+          Line-up
+        </Text>
         {sets.length === 0 ? (
           <View style={styles.soon}>
             <Text tone="muted">Line-up announced soon</Text>
@@ -161,7 +208,9 @@ export default function NightScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text variant="h2">Who’s going</Text>
+        <Text variant="h2" accessibilityRole="header">
+          Who’s going
+        </Text>
         {!booking ? (
           <Notice icon="lock-closed-outline" text="Join the list in classic mode to see who else is going. Usernames only." />
         ) : booking.attendee_visibility === 'ghost' ? (
@@ -171,17 +220,36 @@ export default function NightScreen() {
         ) : (
           <Card>
             {attendees.map((a) => (
-              <AttendeeRow key={a.user_id} attendee={a} onChanged={reload} />
+              <AttendeeRow
+                key={a.user_id}
+                attendee={a}
+                onBlocked={(username) => {
+                  setBlockedName(username);
+                  void reload();
+                }}
+              />
             ))}
           </Card>
         )}
       </View>
 
+      <Sheet visible={blockedName !== null} onClose={() => setBlockedName(null)}>
+        <Text variant="h3" accessibilityRole="header">
+          @{blockedName} is blocked
+        </Text>
+        <Text tone="secondary" accessibilityLiveRegion="polite">
+          You won’t see each other on Outly.
+        </Text>
+        <Button label="Done" onPress={() => setBlockedName(null)} />
+      </Sheet>
+
       <Sheet visible={joinOpen} onClose={() => setJoinOpen(false)}>
-        <Text variant="h2">How do you want to appear?</Text>
+        <Text variant="h2" accessibilityRole="header">
+          How do you want to appear?
+        </Text>
         <Text tone="secondary">Other guests only ever see your username. You can change this any time in Profile.</Text>
         <VisibilityChoice value={visibility} onChange={setVisibility} />
-        {joinError ? <Text tone="danger">{joinError}</Text> : null}
+        <FormError>{joinError}</FormError>
         <Button label={`Join as ${visibility}`} onPress={join} loading={joining} />
       </Sheet>
     </Screen>

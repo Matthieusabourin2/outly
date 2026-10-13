@@ -3,6 +3,8 @@ export * from './Button';
 export * from './Card';
 export * from './Chip';
 export * from './EmptyState';
+export * from './FormError';
+export * from './OfflineBanner';
 export * from './Screen';
 export * from './SourceLabel';
 export * from './Text';

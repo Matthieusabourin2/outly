@@ -1,6 +1,6 @@
 import type { Enums } from '@outly/db';
 
-export type ScanOutcome = Enums<'scan_result'> | 'offline' | 'error';
+export type ScanOutcome = Enums<'scan_result'> | 'offline' | 'slow' | 'error';
 
 /** Door staff read these at a glance: short title, one instruction. */
 export const DOOR_TEXT: Record<ScanOutcome, { title: string; body: string; tone: 'ok' | 'bad' | 'warn' }> = {
@@ -11,6 +11,7 @@ export const DOOR_TEXT: Record<ScanOutcome, { title: string; body: string; tone:
   not_confirmed: { title: 'Pass not active', body: 'This booking was cancelled. Normal line.', tone: 'bad' },
   forbidden: { title: 'Pass blocked', body: 'This account is suspended. Normal line.', tone: 'bad' },
   offline: { title: 'No connection', body: 'Passes can’t be checked right now. Use the normal line.', tone: 'warn' },
+  slow: { title: 'No answer', body: 'The connection is too slow. Scan again, or use the normal line.', tone: 'warn' },
   error: { title: 'Something went wrong', body: 'Try again, or use the normal line.', tone: 'warn' },
 };
 
@@ -28,3 +29,6 @@ export const RESULT_LABELS: Record<Enums<'scan_result'>, string> = {
   not_confirmed: 'Not active',
   forbidden: 'Blocked',
 };
+
+/** Offline banner on the staff site (SPEC: "no network, use the normal line"). */
+export const OFFLINE_STAFF_MESSAGE = 'Passes can’t be checked right now. Use the normal line with tickets.';

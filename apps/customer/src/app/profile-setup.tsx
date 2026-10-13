@@ -1,7 +1,16 @@
-import { displayNameSchema, isAdult, parseDateOfBirth, toIsoDate, toUserMessage, usernameSchema } from '@outly/core';
-import { Button, Screen, Text, TextField, spacing } from '@outly/ui';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import {
+  displayNameSchema,
+  isAdult,
+  isUniqueViolation,
+  normaliseUsername,
+  parseDateOfBirth,
+  toIsoDate,
+  toUserMessage,
+  usernameSchema,
+} from '@outly/core';
+import { Button, FormError, Screen, Text, TextField, spacing } from '@outly/ui';
+import { useRef, useState } from 'react';
+import { StyleSheet, View, type TextInput } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
@@ -16,11 +25,17 @@ export default function ProfileSetupScreen() {
   const [year, setYear] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
+  const usernameInput = useRef<TextInput>(null);
+  const dayInput = useRef<TextInput>(null);
+  const monthInput = useRef<TextInput>(null);
+  const yearInput = useRef<TextInput>(null);
 
   const save = async () => {
+    if (inFlight.current) return;
     const next: Errors = {};
     const n = displayNameSchema.safeParse(name);
-    const u = usernameSchema.safeParse(username);
+    const u = usernameSchema.safeParse(normaliseUsername(username));
     const dob = parseDateOfBirth(day, month, year);
     if (!n.success) next.name = n.error.issues[0]?.message;
     if (!u.success) next.username = u.error.issues[0]?.message;
@@ -29,39 +44,63 @@ export default function ProfileSetupScreen() {
     setErrors(next);
     if (Object.keys(next).length > 0 || !session || !dob || !n.success || !u.success) return;
 
+    inFlight.current = true;
     setBusy(true);
-    const { error } = await supabase.from('profiles').insert({
-      id: session.user.id,
-      display_name: n.data,
-      username: u.data,
-      date_of_birth: toIsoDate(dob),
-    });
-    setBusy(false);
-    if (error) {
-      if (error.code === '23505') setErrors({ username: 'That username is taken. Try another one.' });
-      else setErrors({ form: toUserMessage(error) });
-      return;
+    try {
+      const { error } = await supabase.from('profiles').insert({
+        id: session.user.id,
+        display_name: n.data,
+        username: u.data,
+        date_of_birth: toIsoDate(dob),
+      });
+      // Usernames are unique whatever the case ("Jess" = "jess", citext).
+      if (isUniqueViolation(error, 'profiles_username_key')) {
+        setErrors({ username: 'That username is taken. Try another one.' });
+        return;
+      }
+      // profiles_pkey: the profile was already created (other tab, or a retry after a lost answer).
+      if (error && !isUniqueViolation(error, 'profiles_pkey')) {
+        setErrors({ form: toUserMessage(error) });
+        return;
+      }
+      await refreshProfile();
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
     }
-    await refreshProfile();
   };
 
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text variant="h1">Create your profile</Text>
+        <Text variant="h1" accessibilityRole="header">
+          Create your profile
+        </Text>
         <Text tone="secondary">Other guests only ever see your username, never your name.</Text>
       </View>
 
-      <TextField label="First name" value={name} onChangeText={setName} autoComplete="given-name" error={errors.name} />
       <TextField
+        label="First name"
+        value={name}
+        onChangeText={setName}
+        autoComplete="given-name"
+        error={errors.name}
+        returnKeyType="next"
+        onSubmitEditing={() => usernameInput.current?.focus()}
+      />
+      <TextField
+        ref={usernameInput}
         label="Username"
         value={username}
-        onChangeText={(t) => setUsername(t.replace(/^@/, ''))}
+        onChangeText={(t) => setUsername(t.replace(/^\s*@+/, ''))}
         autoCapitalize="none"
+        autoCorrect={false}
         autoComplete="username"
         placeholder="jessnights"
         error={errors.username}
         hint="Letters, numbers, dots and underscores."
+        returnKeyType="next"
+        onSubmitEditing={() => dayInput.current?.focus()}
       />
 
       <View style={styles.dobBlock}>
@@ -70,17 +109,53 @@ export default function ProfileSetupScreen() {
         </Text>
         <View style={styles.dobRow}>
           <View style={styles.dobPart}>
-            <TextField label="Day" value={day} onChangeText={setDay} placeholder="DD" keyboardType="number-pad" inputMode="numeric" maxLength={2} />
+            <TextField
+              ref={dayInput}
+              label="Day"
+              value={day}
+              onChangeText={setDay}
+              placeholder="DD"
+              keyboardType="number-pad"
+              inputMode="numeric"
+              autoComplete="birthdate-day"
+              maxLength={2}
+              returnKeyType="next"
+              onSubmitEditing={() => monthInput.current?.focus()}
+            />
           </View>
           <View style={styles.dobPart}>
-            <TextField label="Month" value={month} onChangeText={setMonth} placeholder="MM" keyboardType="number-pad" inputMode="numeric" maxLength={2} />
+            <TextField
+              ref={monthInput}
+              label="Month"
+              value={month}
+              onChangeText={setMonth}
+              placeholder="MM"
+              keyboardType="number-pad"
+              inputMode="numeric"
+              autoComplete="birthdate-month"
+              maxLength={2}
+              returnKeyType="next"
+              onSubmitEditing={() => yearInput.current?.focus()}
+            />
           </View>
           <View style={styles.dobYear}>
-            <TextField label="Year" value={year} onChangeText={setYear} placeholder="YYYY" keyboardType="number-pad" inputMode="numeric" maxLength={4} />
+            <TextField
+              ref={yearInput}
+              label="Year"
+              value={year}
+              onChangeText={setYear}
+              placeholder="YYYY"
+              keyboardType="number-pad"
+              inputMode="numeric"
+              autoComplete="birthdate-year"
+              maxLength={4}
+              returnKeyType="go"
+              onSubmitEditing={() => void save()}
+            />
           </View>
         </View>
         {errors.dob ? (
-          <Text variant="caption" tone="danger">
+          <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
             {errors.dob}
           </Text>
         ) : (
@@ -90,7 +165,7 @@ export default function ProfileSetupScreen() {
         )}
       </View>
 
-      {errors.form ? <Text tone="danger">{errors.form}</Text> : null}
+      <FormError>{errors.form}</FormError>
       <Button label="Continue" onPress={save} loading={busy} />
       <Button label="Log out" variant="ghost" onPress={signOut} />
     </Screen>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isNightOver, sydneyDay, sydneyNight, sydneyTime } from './night';
+import { isNightOver, pickTonightList, sydneyDay, sydneyNight, sydneyTime } from './night';
 
 describe('Sydney night', () => {
   it('keeps 1am in the previous night', () => {
@@ -28,5 +28,22 @@ describe('isNightOver', () => {
   });
   it('is never over without any time', () => {
     expect(isNightOver(null, null)).toBe(false);
+  });
+});
+
+describe('pickTonightList', () => {
+  const plain = { id: 'plain', event_id: null, created_at: '2026-10-13T09:00:00Z' };
+  const event = { id: 'event', event_id: 'e1', created_at: '2026-10-13T08:00:00Z' };
+  const newerEvent = { id: 'newer', event_id: 'e2', created_at: '2026-10-13T10:00:00Z' };
+  it('prefers the list linked to an event, even if the plain one is newer', () => {
+    expect(pickTonightList([plain, event])?.id).toBe('event');
+    expect(pickTonightList([event, plain])?.id).toBe('event');
+  });
+  it('then the most recent one', () => {
+    expect(pickTonightList([event, newerEvent, plain])?.id).toBe('newer');
+    expect(pickTonightList([plain])?.id).toBe('plain');
+  });
+  it('is null without any list', () => {
+    expect(pickTonightList([])).toBeNull();
   });
 });

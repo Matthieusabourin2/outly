@@ -1,20 +1,57 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { isNightOver, makePassCode, sydneyDay, sydneyTime } from '@outly/core';
-import { Avatar, Button, Card, EmptyState, Screen, Text, colors, radii, spacing } from '@outly/ui';
+import { OUTLY_ERROR_MESSAGES, isNightOver, passQrValue, sydneyDay, sydneyTime } from '@outly/core';
+import { Avatar, Button, Card, EmptyState, OfflineBanner, Screen, Text, colors, layout, radii, spacing, useKeepScreenOn } from '@outly/ui';
 import { router } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '@/lib/auth';
-import { useNight } from '@/lib/night';
+import { OFFLINE_GUEST_MESSAGE, useNight } from '@/lib/night';
+
+/** Biggest QR that fits the card on any phone, capped for tablets and desktops. */
+const QR_MAX = 280;
+/** Quiet zone = QR size / 8, i.e. a bit more than the 4 modules the QR standard asks for (33 modules). */
+const QUIET_ZONE_RATIO = 1 / 8;
 
 export default function PassScreen() {
   const { profile } = useAuth();
-  const { loading, night, booking } = useNight();
+  const { loading, error, night, booking, reload } = useNight();
+  const { width } = useWindowDimensions();
+  const suspended = !!profile?.suspended_at;
+  const over = !!night && isNightOver(night.event?.starts_at, night.event?.ends_at);
+  const showingPass = !!night && !!booking && booking.status !== 'checked_in' && !over && !suspended;
+  // Keep the phone awake while the guest waits in the queue with the pass open.
+  useKeepScreenOn(showingPass);
 
   if (loading) {
     return (
       <Screen scroll={false}>
         <ActivityIndicator color={colors.accent} style={styles.loader} />
+      </Screen>
+    );
+  }
+
+  if (!night && error) {
+    return (
+      <Screen scroll={false}>
+        <OfflineBanner message={OFFLINE_GUEST_MESSAGE} />
+        <EmptyState
+          icon={<Ionicons name="cloud-offline-outline" size={44} color={colors.accent} />}
+          title="Can’t load your pass"
+          message={error}
+          action={<Button label="Try again" variant="secondary" onPress={reload} />}
+        />
+      </Screen>
+    );
+  }
+
+  if (suspended) {
+    return (
+      <Screen scroll={false}>
+        <EmptyState
+          icon={<Ionicons name="lock-closed-outline" size={44} color={colors.accent} />}
+          title="Pass not available"
+          message={OUTLY_ERROR_MESSAGES.OUTLY_SUSPENDED}
+        />
       </Screen>
     );
   }
@@ -46,7 +83,7 @@ export default function PassScreen() {
     );
   }
 
-  if (isNightOver(night.event?.starts_at, night.event?.ends_at)) {
+  if (over) {
     return (
       <Screen scroll={false}>
         <EmptyState
@@ -58,20 +95,25 @@ export default function PassScreen() {
     );
   }
 
+  // Screen minus the side gutters and the card padding, then minus the quiet zone on both sides.
+  const qrSize = Math.floor(Math.min(QR_MAX, (width - 2 * layout.screenGutter - 2 * spacing[4]) / (1 + 2 * QUIET_ZONE_RATIO)));
+  const quietZone = Math.ceil(qrSize * QUIET_ZONE_RATIO);
+
   return (
     <Screen>
+      <OfflineBanner message={OFFLINE_GUEST_MESSAGE} />
       <View style={styles.header}>
         <Text variant="micro" tone="accent">
           YOUR OUTLY PASS
         </Text>
-        <Text variant="h1">
+        <Text variant="h1" accessibilityRole="header">
           {venue} · {sydneyDay(night.night)}
         </Text>
       </View>
 
       <Card style={styles.card}>
-        <View style={styles.qr} accessibilityRole="image" accessibilityLabel="QR code of your Outly pass">
-          <QRCode value={makePassCode(booking.id, booking.qr_nonce)} size={220} color={colors.qrDark} backgroundColor={colors.qrLight} ecl="M" />
+        <View style={[styles.qr, { padding: quietZone }]} accessibilityRole="image" accessibilityLabel="QR code of your Outly pass">
+          <QRCode value={passQrValue(booking.id, booking.qr_nonce)} size={qrSize} color={colors.qrDark} backgroundColor={colors.qrLight} ecl="M" />
         </View>
         {profile ? (
           <View style={styles.who}>
@@ -103,7 +145,7 @@ const styles = StyleSheet.create({
   loader: { marginTop: spacing[12] },
   header: { gap: spacing[1] },
   card: { alignItems: 'center', gap: spacing[4], paddingVertical: spacing[6] },
-  qr: { padding: spacing[4], borderRadius: radii.md, backgroundColor: colors.qrLight },
+  qr: { borderRadius: radii.md, backgroundColor: colors.qrLight },
   who: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   badge: { paddingHorizontal: spacing[3], paddingVertical: spacing[1] + 2, borderRadius: radii.sm, backgroundColor: colors.successSoft },
   notice: { flexDirection: 'row', gap: spacing[3], padding: spacing[4], borderRadius: radii.md, backgroundColor: colors.surfaceRaised },
