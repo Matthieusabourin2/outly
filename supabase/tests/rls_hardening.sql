@@ -79,7 +79,6 @@ end $$;
 select pg_temp.as_service();
 do $$ declare f text; bad text := ''; begin
   foreach f in array array[
-    'public.join_guest_list(uuid,integer,uuid)', 'public.request_table(uuid,timestamp with time zone,integer,text,uuid)',
     'public.decide_booking(uuid,boolean)', 'public.check_in(uuid,uuid)', 'public.cancel_booking(uuid)',
     'public.join_event_list(uuid,attendee_visibility)', 'public.set_attendee_visibility(uuid,attendee_visibility)',
     'public.guest_list_stats(uuid)', 'public.event_attendees(uuid)', 'public.scan_pass(uuid,text)',
@@ -90,7 +89,7 @@ do $$ declare f text; bad text := ''; begin
     if not has_function_privilege('authenticated', f, 'execute') then bad := bad || ' authenticated-missing:' || f; end if;
   end loop;
   if bad <> '' then raise exception 'H2 FAILED:%', bad; end if;
-  raise notice 'H2 ok: 15 RPCs closed to anon, open to signed-in users';
+  raise notice 'H2 ok: 13 RPCs closed to anon, open to signed-in users';
 end $$;
 
 -- H3: public_profiles exposes usernames only, to signed-in users only
@@ -109,7 +108,7 @@ end $$;
 
 -- H4: door staff cannot read raw bookings (pass nonces); managers can; door scanning still works
 select pg_temp.as_user('b2000000-0000-4000-a000-000000000001');
-select join_guest_list('92000000-0000-4000-a000-000000000001', 1);
+select join_event_list('92000000-0000-4000-a000-000000000001');
 select pg_temp.as_user('b2000000-0000-4000-a000-000000000003');
 do $$ declare n int; begin
   select count(*) into n from bookings where guest_list_id = '92000000-0000-4000-a000-000000000001';
