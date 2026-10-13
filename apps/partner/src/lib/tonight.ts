@@ -1,4 +1,4 @@
-import { sydneyNight, toUserMessage } from '@outly/core';
+import { pickTonightList, sydneyNight, toUserMessage } from '@outly/core';
 import type { Enums } from '@outly/db';
 import { startVisiblePolling } from '@outly/ui';
 import { useFocusEffect } from 'expo-router';
@@ -52,7 +52,7 @@ export function useTonight() {
     const stillCurrent = () => currentVenue.current === venueId;
     try {
       const [list, offer, scans] = await Promise.all([
-        supabase.from('guest_lists').select('id').eq('venue_id', venueId).eq('night', sydneyNight()).order('created_at').limit(1).maybeSingle(),
+        supabase.from('guest_lists').select('id, event_id, created_at').eq('venue_id', venueId).eq('night', sydneyNight()).limit(20),
         supabase
           .from('deals')
           .select('id, title')
@@ -65,19 +65,20 @@ export function useTonight() {
         supabase.rpc('recent_scans', { p_venue_id: venueId, p_limit: 8 }),
       ]);
       if (list.error) throw list.error;
+      const tonight = pickTonightList(list.data);
       if (offer.error) throw offer.error;
       if (scans.error) throw scans.error;
 
       let counter: State['counter'] = null;
       let live: LiveStats | null = null;
-      if (list.data) {
-        const c = await supabase.rpc('guest_list_stats', { p_guest_list_id: list.data.id });
+      if (tonight) {
+        const c = await supabase.rpc('guest_list_stats', { p_guest_list_id: tonight.id });
         if (c.error) throw c.error;
         counter = c.data[0] ?? null;
         if (manager) {
           const s = await supabase.rpc('venue_live_stats', { p_venue_id: venueId });
           if (s.error) throw s.error;
-          live = s.data.find((r) => r.guest_list_id === list.data!.id) ?? null;
+          live = s.data.find((r) => r.guest_list_id === tonight.id) ?? null;
         }
       }
       if (!stillCurrent()) return;
@@ -85,7 +86,7 @@ export function useTonight() {
         venueId,
         loading: false,
         error: null,
-        guestListId: list.data?.id ?? null,
+        guestListId: tonight?.id ?? null,
         counter,
         live,
         offer: offer.data,

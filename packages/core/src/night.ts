@@ -35,3 +35,16 @@ export function isNightOver(startsAt: string | null | undefined, endsAt: string 
   if (startsAt) return now.getTime() > new Date(startsAt).getTime() + DEFAULT_EVENT_HOURS * 3600 * 1000;
   return false;
 }
+
+/**
+ * A venue can have several guest lists on the same night (e.g. a plain list and the event's
+ * Outly list). Staff screens follow the one linked to an event, then the most recent one.
+ */
+export function pickTonightList<T extends { event_id: string | null; created_at: string }>(lists: readonly T[]): T | null {
+  return (
+    [...lists].sort((a, b) => {
+      if ((a.event_id === null) !== (b.event_id === null)) return a.event_id === null ? 1 : -1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    })[0] ?? null
+  );
+}
