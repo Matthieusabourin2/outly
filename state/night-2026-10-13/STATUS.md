@@ -7,15 +7,15 @@
 | 0. Préparation (branche d'intégration, 4 worktrees, install, typecheck) | ✅ fait | `slice/1-rouge-night` @ 72eb4b1 + plan |
 | A. Déploiement prêt | ✅ fini + ✅ relu (ready_with_fixes, 1 commit de correctifs) | 6 commits ; _redirects volontairement sans règle (fallback SPA natif de Cloudflare) ; scripts Rouge testés en local |
 | B. Tests de bout en bout | ✅ fini + ✅ relu (ready_with_fixes, 1 commit) | pnpm e2e : 7 scénarios OK ×2, 1 sauté (bug AttendeeRow transmis à C) |
-| C. Durcissement des sites | ✅ fini → 🔄 relecteur lancé | 10 commits ; scanner réécrit (plus de scan en arrière-plan, bon lieu après changement), wasm QR auto-hébergé, QR en majuscules, états d'erreur |
+| C. Durcissement des sites | ✅ fini + ✅ relu (3 commits de correctifs sur le scanner) | 10 commits ; scanner réécrit (plus de scan en arrière-plan, bon lieu après changement), wasm QR auto-hébergé, QR en majuscules, états d'erreur |
 | D. Audit sécurité base | ✅ fait (avant la nuit) | migration 0003, 47 tests, API sondée, parcours Chrome OK |
 | E. Sécurité transverse | ✅ fini + ✅ relu (ready_with_fixes, 4 commits, migration 0005) | CSP prouvée (18 vérifs, 0 violation) ; migration 0004 : 3 failles fermées (auto-levée de suspension, colonnes protégées, amitiés/messages) ; db:test 56 | fait : SECURITY.md, audit deps + CI, Auth durci, delete-account restreint, contrôle secrets des builds (CI). CAPTCHA Turnstile fait et testé. Reste nuit : CSP (doit autoriser challenges.cloudflare.com pour Turnstile : script-src + frame-src) |
-| Relecture adversariale | ⏳ | |
-| Audit sécurité final (diff complet de la nuit) | ⏳ | |
-| Intégration + vérification complète | ⏳ | |
-| Push + PR brouillon + checks | ⏳ | |
-| Rapport du matin | ⏳ | |
-| Nettoyage worktrees | ⏳ | |
+| Relecture adversariale | ✅ fait | A, B, C, E relus ; correctifs intégrés |
+| Audit sécurité final (diff complet de la nuit) | ✅ fait | 1 bloquant (détournement de compte du personnel) + 3 à corriger → corrigés (rouge:staff, migration 0006) |
+| Intégration + vérification complète | ✅ fait | E → C → A → B fusionnés ; tout vert (voir journal) |
+| Push + PR brouillon + checks | 🔄 | PR #5 |
+| Rapport du matin | ✅ fait | `MORNING.md` |
+| Nettoyage worktrees | ✅ fait | 4 worktrees + branches night/* supprimés (tout était fusionné) |
 
 ## Journal
 
@@ -34,3 +34,6 @@
 - 2026-10-14 — Relecture B : ready_with_fixes — pnpm e2e n'écrase plus les .env.local (EXPO_NO_DOTENV), refuse les URL de site non locales, guillemets Windows, attend le passage de 6 h si besoin. Après fusion de C : relancer pnpm e2e (textes d'UI) et retirer le skip du test de blocage si C a corrigé AttendeeRow.
 - 2026-10-14 — Relecture E : 3 failles majeures de plus, corrigées : (1) 0004 complétée (referred_by/referral_code/created_at forcés à la création → plus de blocage du droit à l'effacement) ; (2) 0005 : join_guest_list et request_table fermés aux utilisateurs (un compte pouvait prendre 30 places → A4 contourné) ; (3) 0005 : 11 clés étrangères vers profiles en ON DELETE SET NULL (suppression de compte jamais bloquée). db:test 63. À faire à l'intégration : amendement SPEC (A11) pour 0004/0005 ; coller la CSP (instructions exactes dans SECURITY.md) ; relancer security:csp et e2e.
 - 2026-10-14 — C fini (vert, 23 tests unitaires). Pour l'intégration : QR en MAJUSCULES (passQrValue) → adapter le test e2e 01 ; wasm zxing auto-hébergé (/zxing/3.1.3/) + repli CDN → la CSP staff garde l'URL jsdelivr exacte et connect-src 'self'. Début de l'intégration : E puis A (pendant la relecture de C).
+- 2026-10-14 — Intégration faite (E → C → A → B) dans `slice/1-rouge-night` : Turnstile porté sur le site équipe (sinon les vigiles seraient bloqués quand le CAPTCHA est activé côté Supabase), CSP équipe autorise challenges.cloudflare.com, e2e adaptés (QR en majuscules, test de blocage réactivé).
+- 2026-10-14 — Vérification complète, toute verte : typecheck, lint, 23 tests unitaires, db:test (63), check:csp, audit (2 hautes acceptées, outils de dev), builds web client + équipe, check:secrets (aucun secret), gitleaks (aucune fuite), **pnpm e2e 8/8** (0 sauté), **security:csp 18 vérifs / 0 violation** (après correction du test : playwright-core chargé via son entrée CommonJS ; le wasm QR vient bien du site équipe, pas du CDN). Base locale remise à zéro + seed.
+- 2026-10-14 — Audit final : **bloquant** — un compte du personnel créé par invitation (non confirmé) pouvait être pris par quiconque s'inscrivait avec son adresse (confirmation d'email désactivée, A6). Corrigé dans `rouge:staff` (comptes confirmés + email « choisir son mot de passe », adresse déjà prise refusée sauf `--allow-existing`), prouvé en local. Migration **0006** : suspension = plus aucun pouvoir (invité et personnel), journal des scans conservé à la suppression d'un compte et limité au lieu, `check_in` fermée, messages non antidatables. db:test 69 (contre-épreuve sans 0006 : échec), e2e 8/8, check:csp exige les 4 fichiers, CI figée par empreintes. Décision produit remontée : confirmation d'email (occupation d'adresse d'un invité).
