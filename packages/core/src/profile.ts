@@ -6,6 +6,14 @@ export const usernameSchema = z
   .trim()
   .regex(/^[a-zA-Z0-9_.]{3,24}$/, '3–24 characters: letters, numbers, dots or underscores.');
 
+/**
+ * What people type is not always what they mean: " @Jess.Nights " -> "Jess.Nights".
+ * Case is kept as typed; the database (citext) treats "Jess" and "jess" as the same username.
+ */
+export function normaliseUsername(input: string): string {
+  return input.trim().replace(/^@+/, '').trim();
+}
+
 export const displayNameSchema = z.string().trim().min(1, 'Enter your first name.').max(60, 'Keep it under 60 characters.');
 
 export const MINIMUM_AGE = 18;

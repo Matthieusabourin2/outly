@@ -17,3 +17,14 @@ export function parsePassCode(text: string): { bookingId: string; nonce: string 
   if (!bookingId || !nonce || !UUID.test(bookingId) || !UUID.test(nonce)) return null;
   return { bookingId, nonce };
 }
+
+/**
+ * The text drawn in the pass QR code. Upper case on purpose: every character of
+ * "OUTLY1:<UUID>:<UUID>" is then in the QR alphanumeric set, which needs a smaller
+ * code (33x33 modules instead of 37x37), so each module is bigger on screen and
+ * easier to read from a bright phone at the door. Parsing is case-insensitive
+ * (parsePassCode here, parse_pass_code() in SQL), so both forms are accepted.
+ */
+export function passQrValue(bookingId: string, nonce: string): string {
+  return makePassCode(bookingId, nonce).toUpperCase();
+}
