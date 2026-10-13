@@ -19,3 +19,6 @@ expo-env.d.ts
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+# End-to-end tests (pnpm e2e): exported sites and screenshots
+e2e/.dist/
+e2e/.artifacts/

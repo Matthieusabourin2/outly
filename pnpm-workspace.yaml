@@ -1,6 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "e2e"
 allowBuilds:
   unrs-resolver: true
 # Known advisories accepted after review (see docs/SECURITY.md § Dépendances). CI fails on any OTHER high/critical.
