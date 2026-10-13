@@ -44,6 +44,18 @@ export default function PassScreen() {
     );
   }
 
+  if (suspended) {
+    return (
+      <Screen scroll={false}>
+        <EmptyState
+          icon={<Ionicons name="lock-closed-outline" size={44} color={colors.accent} />}
+          title="Pass not available"
+          message={OUTLY_ERROR_MESSAGES.OUTLY_SUSPENDED}
+        />
+      </Screen>
+    );
+  }
+
   if (!night || !booking) {
     return (
       <Screen scroll={false}>
@@ -66,18 +78,6 @@ export default function PassScreen() {
           icon={<Ionicons name="checkmark-circle" size={64} color={colors.success} />}
           title="You're in!"
           message={`Checked in at ${venue}${booking.checked_in_at ? ` at ${sydneyTime(booking.checked_in_at)}` : ''}. Have a great night.`}
-        />
-      </Screen>
-    );
-  }
-
-  if (suspended) {
-    return (
-      <Screen scroll={false}>
-        <EmptyState
-          icon={<Ionicons name="lock-closed-outline" size={44} color={colors.accent} />}
-          title="Pass not available"
-          message={OUTLY_ERROR_MESSAGES.OUTLY_SUSPENDED}
         />
       </Screen>
     );
