@@ -112,7 +112,10 @@ pnpm e2e door offline          # seulement les scénarios dont le fichier contie
 E2E_SKIP_BUILD=1 pnpm e2e      # réutilise la dernière compilation (quand seuls les tests ont changé)
 E2E_HEADED=1 pnpm e2e          # montre les fenêtres de Chrome
 E2E_CHROME_PATH=/chemin/chrome pnpm e2e   # autre Chrome que celui installé
+E2E_RUN_SKIPPED=1 pnpm e2e     # lance aussi les tests mis de côté à cause d'un bug connu de l'appli (pour vérifier une correction)
 ```
+
+**Test mis de côté (bug connu)** : « the block confirmation stays on screen until "Done" » — après un blocage, la liste se recharge tout de suite et la feuille de confirmation disparaît avec la ligne de la personne bloquée (`apps/customer/src/components/AttendeeRow.tsx`). Le blocage lui-même est bien vérifié par le scénario 3. Retirer le `skip` une fois corrigé.
 
 Si un port est pris (8091 / 8092), arrêter ce qui l'utilise. Si Chrome n'est pas trouvé, installer Google Chrome ou utiliser `E2E_CHROME_PATH`.
 

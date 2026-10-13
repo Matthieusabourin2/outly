@@ -11,6 +11,7 @@
 //   E2E_SKIP_BUILD=1   reuse the last export in e2e/.dist/ (faster when only tests changed)
 //   E2E_HEADED=1       show the Chrome windows
 //   E2E_CHROME_PATH    use this Chrome binary instead of the installed Google Chrome
+//   E2E_RUN_SKIPPED=1  also run the tests skipped because of a known app bug (to check a fix)
 // Arguments: optional substrings to pick scenario files, e.g. `pnpm e2e door offline`.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
