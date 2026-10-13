@@ -21,6 +21,8 @@
     "db:start": "node scripts/db-start.mjs",
     "db:stop": "supabase stop",
     "db:seed-users": "node scripts/seed-demo-users.mjs",
+    "rouge:setup": "node scripts/rouge/setup-night.mjs",
+    "rouge:staff": "node scripts/rouge/staff.mjs",
     "check:secrets": "node scripts/check-bundle-secrets.mjs"
   },
   "devDependencies": {
