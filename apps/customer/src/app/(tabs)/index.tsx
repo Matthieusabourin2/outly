@@ -23,6 +23,7 @@ export default function NightScreen() {
   const [visibility, setVisibility] = useState<Enums<'attendee_visibility'>>('ghost');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [blockedName, setBlockedName] = useState<string | null>(null);
   // A double tap fires twice before React re-renders the button as busy: one request at a time.
   const joinInFlight = useRef(false);
 
@@ -217,11 +218,28 @@ export default function NightScreen() {
         ) : (
           <Card>
             {attendees.map((a) => (
-              <AttendeeRow key={a.user_id} attendee={a} onChanged={reload} />
+              <AttendeeRow
+                key={a.user_id}
+                attendee={a}
+                onBlocked={(username) => {
+                  setBlockedName(username);
+                  void reload();
+                }}
+              />
             ))}
           </Card>
         )}
       </View>
+
+      <Sheet visible={blockedName !== null} onClose={() => setBlockedName(null)}>
+        <Text variant="h3" accessibilityRole="header">
+          @{blockedName} is blocked
+        </Text>
+        <Text tone="secondary" accessibilityLiveRegion="polite">
+          You won’t see each other on Outly.
+        </Text>
+        <Button label="Done" onPress={() => setBlockedName(null)} />
+      </Sheet>
 
       <Sheet visible={joinOpen} onClose={() => setJoinOpen(false)}>
         <Text variant="h2" accessibilityRole="header">

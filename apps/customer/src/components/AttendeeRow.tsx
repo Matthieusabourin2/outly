@@ -10,8 +10,13 @@ import { Sheet } from './Sheet';
 
 type Step = 'menu' | 'report' | 'block' | 'done';
 
-/** One attendee, with report and block (CLAUDE.md non-negotiable 8). */
-export function AttendeeRow({ attendee, onChanged }: { attendee: Attendee; onChanged: () => void }) {
+/**
+ * One attendee, with report and block (CLAUDE.md non-negotiable 8).
+ * After a block the person leaves the list, and this row (with its sheet) unmounts on the
+ * next refresh, so the confirmation is shown by the parent: `onBlocked` closes this sheet
+ * and hands over the username.
+ */
+export function AttendeeRow({ attendee, onBlocked }: { attendee: Attendee; onBlocked: (username: string) => void }) {
   const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>('menu');
@@ -46,9 +51,8 @@ export function AttendeeRow({ attendee, onChanged }: { attendee: Attendee; onCha
     const { error: e } = await supabase.from('blocks').insert({ blocker_id: me, blocked_id: attendee.user_id });
     setBusy(false);
     if (e && e.code !== '23505') return setError(toUserMessage(e));
-    setDoneText(`@${attendee.username} is blocked. You won't see each other on Outly.`);
-    setStep('done');
-    onChanged();
+    close();
+    onBlocked(attendee.username);
   };
 
   return (
