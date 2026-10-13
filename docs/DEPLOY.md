@@ -65,7 +65,7 @@ Avant d'aller plus loin : **2FA partout** et gestionnaire de mots de passe → `
 3. Mot de passe de la base : en générer un long, le ranger **uniquement** dans le gestionnaire de mots de passe.
 4. Noter le **Project ref** (la partie `<ref>` de `https://<ref>.supabase.co`) — ce n'est pas un secret.
 
-### 2.2 Envoyer la base (migrations) — 💻 TERMINAL
+### 2.2 Envoyer la base (migrations) — 💻 TERMINAL, lancé par Gabriel (👤 décision : touche la production)
 
 Depuis la racine du projet, sur la branche qui doit partir en production (à jour avec `main`) :
 
@@ -79,7 +79,7 @@ pnpm exec supabase db push                        # applique 0001, 0002, 0003 (e
 - `db push` n'applique **que** les migrations de `supabase/migrations/`. Il ne lance pas les données de démo (`seed_demo.sql`), sauf avec `--include-seed` : **ne jamais ajouter ce drapeau**.
 - ✅ VÉRIFIER : `pnpm exec supabase migration list` montre `0001`, `0002`, `0003` en local **et** en distant. Dans le tableau de bord → *Table Editor*, la table `venues` est **vide**.
 
-### 2.3 Fonction serveur de suppression de compte — 💻 TERMINAL
+### 2.3 Fonction serveur de suppression de compte — 💻 TERMINAL, lancé par Gabriel (👤 décision : touche la production)
 
 ```
 pnpm exec supabase functions deploy delete-account
@@ -210,7 +210,7 @@ pnpm check:secrets apps/customer/dist apps/partner/dist   # aucun secret dans le
 | `X-Frame-Options` | `DENY` |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
 | `Permissions-Policy` | site client : `camera=(), microphone=(), geolocation=()` — site équipe : `camera=(self), microphone=(), geolocation=()` (la caméra sert au scan) |
-| `Content-Security-Policy` | préparée par le chantier sécurité : emplacement marqué dans `_headers` ; dans `vercel.json`, une ligne de plus dans la liste `headers` de `"/(.*)"` |
+| `Content-Security-Policy` | préparée par le chantier sécurité : emplacement marqué dans `_headers` ; dans `vercel.json`, une ligne de plus dans la liste `headers` de `"/(.*)"`. ⚠️ Site équipe : sur les navigateurs sans lecteur de QR intégré (iPhone/Safari), le scanner télécharge son module WebAssembly depuis `https://fastly.jsdelivr.net/npm/zxing-wasm@…` au premier scan : la CSP doit l'autoriser (`connect-src`, et `'wasm-unsafe-eval'` dans `script-src`), et le téléphone du vigile doit avoir du réseau |
 
 Les fichiers compilés dont le nom contient une empreinte (`/_expo/static/…`, `/assets/…`) sont mis en cache un an ; la page HTML est revérifiée à chaque visite, donc un nouveau déploiement est visible tout de suite.
 
@@ -290,7 +290,7 @@ Deux scripts (SPEC A9 : le contenu de la soirée et les comptes des vigiles sont
 |---|---|
 | `--target local\|prod` | **Obligatoire.** Sans cible, le script refuse |
 | Cible `local` | Lit l'adresse et la clé dans `supabase status` (comme `pnpm db:seed-users`) et **refuse** toute base qui n'est pas sur cet ordinateur |
-| Cible `prod` | Exige **`--apply` ET `--confirm-prod`**, lit `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` **uniquement** dans le terminal (jamais dans un fichier), refuse une adresse non `https://` ou locale, et refuse un contenu qui contient encore `PLACEHOLDER` |
+| Cible `prod` | Exige **`--apply` ET `--confirm-prod`**, lit `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` **uniquement** dans le terminal (jamais dans un fichier), refuse une adresse non `https://` ou locale, refuse un contenu qui contient encore `PLACEHOLDER` et des comptes en `@example.com` (modèle CSV) |
 | Relance | Les deux scripts peuvent être relancés : ce qui est déjà en place est marqué `=` (« unchanged ») |
 
 ### 5.1 Préparer les fichiers — 👤 HUMAIN
@@ -370,7 +370,7 @@ unset SUPABASE_SERVICE_ROLE_KEY                                          # ferme
 | 8 | Page de la soirée | Rouge, date, heure (heure de Sydney), avantage, compteur « x / 200 », line-up |
 | 9 | Rejoindre la liste (choix fantôme / classique) → onglet Pass | QR affiché, le compteur augmente |
 | 10 | Site équipe : connexion avec un compte **vigile** | Onglet Scan |
-| 11 | 📱 **Vrai téléphone, en HTTPS** : sur l'iPhone (Safari) **et** un Android (Chrome) du personnel, ouvrir `https://staff.<domaine>`, se connecter, **autoriser la caméra**, scanner le pass affiché sur un **autre** téléphone | Caméra qui s'ouvre, « Fast lane OK — Now check their ticket. » |
+| 11 | 📱 **Vrai téléphone, en HTTPS** : sur l'iPhone (Safari) **et** un Android (Chrome) du personnel, ouvrir `https://staff.<domaine>`, se connecter, **autoriser la caméra**, scanner le pass affiché sur un **autre** téléphone | Caméra qui s'ouvre, « Fast lane OK — Now check their ticket. » (sur iPhone, aucune erreur `jsdelivr` / CSP dans la console : voir § 3.1, ligne CSP) |
 | 12 | Rescanner le même pass | « Pass already used » (rouge) |
 | 13 | Ajouter le site équipe à l'écran d'accueil (Safari → Partager → « Sur l'écran d'accueil ») puis rouvrir et scanner | Icône « Outly Staff », la caméra marche aussi depuis l'icône |
 | 14 | Compte **manager** | Statistiques en direct qui bougent après le scan |

@@ -108,6 +108,11 @@ await run(async () => {
   const { target, url, client: db } = connect(args);
   const apply = Boolean(args.apply);
   // Production always invites; locally, --invite tests the same path (the email lands in Mailpit).
+  if (target === 'prod') {
+    // The template CSV uses example.com addresses: never create those accounts (or give them a venue role) in production.
+    const fake = staff.filter((s) => /@(.+\.)?example\.(com|org|net)$/.test(s.email) || /placeholder/i.test(s.email));
+    if (fake.length) throw new Refusal(`Refusing to create placeholder accounts in production: ${fake.map((s) => s.email).join(', ')}`);
+  }
   const invite = target === 'prod' || Boolean(args.invite);
   const redirectTo = args['invite-redirect'];
   if (invite && target === 'prod' && !/^https:\/\/[^/]+\/reset-password$/.test(redirectTo ?? '')) {
