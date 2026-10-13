@@ -13,7 +13,7 @@
 | Relecture adversariale | ✅ fait | A, B, C, E relus ; correctifs intégrés |
 | Audit sécurité final (diff complet de la nuit) | ✅ fait | 1 bloquant (détournement de compte du personnel) + 3 à corriger → corrigés (rouge:staff, migration 0006) |
 | Intégration + vérification complète | ✅ fait | E → C → A → B fusionnés ; tout vert (voir journal) |
-| Push + PR brouillon + checks | 🔄 | PR #5 |
+| Push + PR brouillon + checks | ✅ fait | PR #5 : 7 checks verts (CI + Vercel), db:test 69 en CI |
 | Rapport du matin | ✅ fait | `MORNING.md` |
 | Nettoyage worktrees | ✅ fait | 4 worktrees + branches night/* supprimés (tout était fusionné) |
 
