@@ -61,7 +61,9 @@ async function loadPlaywright() {
   for (const t of tries) {
     try {
       const m = await t();
+      // The CommonJS entry (index.js) puts the API under `default` when imported.
       if (m?.chromium) return m;
+      if (m?.default?.chromium) return m.default;
     } catch {
       /* next */
     }
@@ -270,7 +272,10 @@ try {
     const { context, page, label } = await newPage('staff', staff.url, { polyfill });
     let wasm = null;
     page.on('response', async (r) => {
-      if (r.url() === ZXING_WASM_URL) wasm = r.status();
+      // Our own copy first (public/zxing/), the pinned CDN file only if ours is missing or damaged.
+      if (r.url() === ZXING_WASM_URL || new URL(r.url()).pathname.endsWith('/zxing_reader.wasm')) {
+        wasm ??= { status: r.status(), host: new URL(r.url()).host };
+      }
       if (r.url().includes('/rest/v1/rpc/scan_pass') && r.status() >= 400) {
         console.log(`    scan_pass HTTP ${r.status()}: ${(await r.text().catch(() => '')).slice(0, 200)}`);
       }
@@ -299,7 +304,10 @@ try {
       await page.getByRole('button', { name: 'Scan next' }).click();
     }
     check(true, `${label}: fake camera on, QR read, scan_pass answered "Invalid pass"`);
-    if (polyfill) check(wasm === 200, `${label}: QR WebAssembly fetched from ${new URL(ZXING_WASM_URL).host} (HTTP ${wasm})`);
+    if (polyfill) {
+      const own = wasm?.host === new URL(staff.url).host;
+      check(wasm?.status === 200 && own, `${label}: QR WebAssembly served by the staff site itself (${wasm ? `${wasm.host}, HTTP ${wasm.status}` : 'not fetched'})`);
+    }
     const n = await collect(page, label);
     check(n === 0 && violations.length === 0, `${label}: 0 CSP violations (${n} event(s), ${violations.length} total so far)`);
     await context.close();
