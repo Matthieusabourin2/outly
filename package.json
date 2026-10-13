@@ -25,7 +25,8 @@
     "rouge:staff": "node scripts/rouge/staff.mjs",
     "check:secrets": "node scripts/check-bundle-secrets.mjs",
     "check:csp": "node scripts/check-csp-headers.mjs",
-    "security:csp": "node security/csp-test.mjs"
+    "security:csp": "node security/csp-test.mjs",
+    "e2e": "node e2e/run.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.117.2",

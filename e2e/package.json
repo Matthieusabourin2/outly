@@ -1,0 +1,18 @@
+{
+  "name": "@outly/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end tests: customer + staff websites in Chrome against the local Supabase (see docs/SETUP.md).",
+  "scripts": {
+    "e2e": "node run.mjs"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.117.2",
+    "jpeg-js": "0.4.4",
+    "jsqr": "1.4.0",
+    "playwright-core": "1.63.0",
+    "pngjs": "7.0.0",
+    "qrcode": "1.5.4"
+  }
+}

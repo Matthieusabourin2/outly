@@ -74,6 +74,51 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm db:test
 
 La CI GitHub relance ces vérifications sur chaque PR. Une PR rouge n'est pas fusionnée.
 
+## 6. Tests de bout en bout (`pnpm e2e`)
+
+Rejoue les vrais parcours client et équipe dans **Google Chrome** (installé normalement sur l'ordinateur, sans fenêtre), contre la base Supabase **locale**. À lancer avant une PR qui touche les sites client / équipe ou la base. **Pas dans la CI** (il faut Docker).
+
+```
+pnpm db:start        # si la base locale ne tourne pas déjà (Docker ouvert)
+pnpm e2e             # ~2 minutes
+```
+
+> ⚠️ `pnpm e2e` **remet la base locale à zéro** (`db:reset` + `db:seed-users`) au début de chaque lancement : tout ce que tu as créé à la main en local est effacé. Il refuse de tourner si Supabase (ou `E2E_CUSTOMER_URL` / `E2E_PARTNER_URL`) n'est pas local.
+
+**Ce que fait la commande** (`e2e/run.mjs`) : vérifie que Supabase local tourne, `db:reset`, `db:seed-users`, cale la soirée de démo sur l'heure actuelle (voir plus bas), compile les deux sites (`expo export --platform web --clear` → `e2e/.dist/`, avec les clés de la base locale passées directement : les fichiers `.env.local` des applis sont ignorés et jamais réécrits), les sert sur http://127.0.0.1:8091 (client) et http://127.0.0.1:8092 (équipe), puis lance les scénarios un par un (`node --test`), écran de téléphone 390 × 844.
+
+**Les 7 scénarios** (`e2e/tests/`, chacun avec ses propres comptes neufs, indépendants de l'ordre) :
+
+| # | Parcours | Vérifie |
+|---|---|---|
+| 1 | Client complet | inscription email + mot de passe → date de naissance < 18 ans refusée → profil adulte → Night (lieu, compteur) → rejoindre en *classic* → Pass : le QR affiché est décodé et vaut `OUTLY1:<booking_id>:<nonce>` de la réservation lue avec la session du client → passage en *ghost* → suppression du compte → reconnexion impossible |
+| 2 | Code par email | demande du code, lecture dans Mailpit (API locale), connexion → création du profil |
+| 3 | Participants | *classic* voit *classic*, *ghost* ne voit personne ; signalement (ligne dans `reports`) ; blocage qui cache dans les deux sens |
+| 4 | Porte (fausse caméra) | « Fast lane OK » + pseudo → même pass : « Pass already used » ; QR quelconque : « Invalid pass » ; le pass du client affiche « You're in! » ; le manager voit les compteurs et les derniers scans avec les pseudos |
+| 5 | Rôles + bar | vigile : Tonight + Door ; barman : Tonight + Bar ; manager : les trois ; offre éteinte → « No Outly drinks offer tonight » ; offre allumée → « Offer OK » puis « Offer already used » ; offre remise en brouillon |
+| 6 | Soirée finie | soirée de démo déplacée dans le passé → « This night is over », pas de bouton Rejoindre, pass plus affiché ; heures d'origine remises à l'identique |
+| 7 | Hors ligne | scanner ouvert sans réseau → « No connection » ; réseau revenu → le même pass passe |
+
+**La fausse caméra** : Chrome est lancé avec `--use-fake-device-for-media-stream --use-file-for-fake-video-capture=<pass.mjpeg>` ; l'image (640 × 480, QR centré sur fond blanc) est fabriquée en JavaScript (`e2e/lib/qr.mjs`), donc pareil sous macOS et Windows.
+
+**La soirée de démo calée sur l'heure actuelle** : `seed_demo.sql` date la soirée avec la date du calendrier (21 h → 3 h). Remise à zéro entre minuit et 6 h, le site équipe (qui compte « la nuit » jusqu'à 6 h du matin) ne trouverait aucune guest list ce soir. Le lanceur déplace donc la soirée de démo autour de l'heure actuelle (début il y a 1 h, fin dans 6 h) et met l'autre guest list du Velvet Tram la veille, pour que les tests passent à n'importe quelle heure. Lancé moins de 10 minutes avant 6 h du matin (le changement de « nuit »), il attend 6 h pour ne pas être à cheval dessus.
+
+**Résultats** : captures d'écran des étapes clés (et de toutes les pages ouvertes en cas d'échec) + erreurs de console dans `e2e/.artifacts/<date>/` (les 5 derniers lancements sont gardés, dossier ignoré par Git).
+
+**Options** :
+
+```
+pnpm e2e door offline          # seulement les scénarios dont le fichier contient « door » ou « offline »
+E2E_SKIP_BUILD=1 pnpm e2e      # réutilise la dernière compilation (quand seuls les tests ont changé)
+E2E_HEADED=1 pnpm e2e          # montre les fenêtres de Chrome
+E2E_CHROME_PATH=/chemin/chrome pnpm e2e   # autre Chrome que celui installé
+E2E_RUN_SKIPPED=1 pnpm e2e     # lance aussi les tests mis de côté à cause d'un bug connu de l'appli (pour vérifier une correction)
+```
+
+**Test mis de côté (bug connu)** : « the block confirmation stays on screen until "Done" » — après un blocage, la liste se recharge tout de suite et la feuille de confirmation disparaît avec la ligne de la personne bloquée (`apps/customer/src/components/AttendeeRow.tsx`). Le blocage lui-même est bien vérifié par le scénario 3. Retirer le `skip` une fois corrigé.
+
+Si un port est pris (8091 / 8092), arrêter ce qui l'utilise. Si Chrome n'est pas trouvé, installer Google Chrome ou utiliser `E2E_CHROME_PATH`.
+
 ## Règles de travail à deux
 
 - **On ne travaille jamais directement sur `main`.** Une branche par sujet (`slice/1-rouge`, `admin/dashboard`…), puis une PR.
