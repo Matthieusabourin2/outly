@@ -15,6 +15,7 @@ Concrètement, mesurable :
 4. Une **suite de tests de bout en bout** dans le dépôt (`pnpm e2e`) qui rejoue les parcours client et équipe dans Chrome, caméra comprise.
 5. Les sites client et équipe **durcis** (cas limites, erreurs, accessibilité, iPhone/Safari) sans changer les décisions produit.
 6. ✅ **Audit sécurité de la base** — fait avant la nuit (migration `0003`, 47 tests).
+8. **Sécurité transverse (chantier E)** : modèle de menaces et liste de contrôle de mise en ligne (`docs/SECURITY.md`), failles des dépendances corrigées ou justifiées + contrôle automatique en CI, réglages Auth durcis (limites de débit, codes, mots de passe), protection contre le remplissage de la guest list par des robots, fonction serveur durcie, vérification automatique qu'aucun secret n'est dans les sites compilés, politique de sécurité du navigateur (CSP) testée dans Chrome.
 7. Tout vert : typecheck, lint, tests unitaires, `pnpm db:test`, `pnpm e2e`, exports web, gitleaks. Poussé sur GitHub, PR en brouillon, rapport du matin écrit.
 
 ## 2. Règles infranchissables (gates) — valables pour TOUS les agents
@@ -40,18 +41,20 @@ Base commune : branche `slice/1-rouge-night` (= `slice/1-rouge` + ce plan).
 | **B. Tests de bout en bout** | `~/Documents/GitHub/outly-wt/e2e` | `night/e2e` | nouveau paquet `e2e/`, `package.json` racine (scripts), `pnpm-workspace.yaml`, `docs/SETUP.md` (section e2e) |
 | **C. Durcissement des sites** | `~/Documents/GitHub/outly-wt/apps` | `night/apps` | `apps/customer/src`, `apps/partner/src`, `packages/ui`, `packages/core` |
 | ~~D. Audit sécurité base~~ | — | — | **Fait avant la nuit par l'orchestrateur** (13 oct., migration `0003`, 47 tests, vérifié sur la vraie base locale et dans Chrome). Les agents ne touchent pas `supabase/` sauf besoin prouvé. |
+| **E. Sécurité transverse** | `~/Documents/GitHub/outly-wt/security` | `night/security` | `docs/SECURITY.md`, `.github/workflows/ci.yml`, `package.json` racine (`pnpm.overrides`, `pnpm.auditConfig`, scripts), `pnpm-lock.yaml`, `supabase/config.toml` (section auth), `supabase/functions/`, `scripts/check-*.mjs` |
 
 Chaque chantier se termine par : typecheck + lint + tests unitaires + `pnpm db:test` verts dans son worktree, commits propres (messages en anglais, ligne `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`), et un **rapport structuré** (fait / vérifié comment / non fait / risques / questions pour Gabriel).
 
 ## 4. Intégration (orchestrateur, après les chantiers)
 
 1. Relecture de chaque rapport + vérification adversariale (un relecteur par chantier).
-2. Fusion des 3 branches dans `slice/1-rouge-night` (ordre : C → A → B), résolution des conflits (attendus : `package.json` racine, `pnpm-lock.yaml`).
+2. Fusion des 4 branches dans `slice/1-rouge-night` (ordre : E → C → A → B) ; la CSP de E et les en-têtes de A vivent dans les mêmes fichiers (`_headers`, `vercel.json`) : l'orchestrateur les fusionne, résolution des conflits (attendus : `package.json` racine, `pnpm-lock.yaml`).
 3. Régénération des types si `0003` existe ; `pnpm install`.
 4. Vérification complète : typecheck, lint, unit, `pnpm db:test`, `db:reset` + `db:seed-users` + `pnpm e2e`, exports web des 2 sites, gitleaks sur tout l'historique.
-5. Push de `slice/1-rouge-night`, PR **brouillon** vers `slice/1-rouge` (empilée sur la PR #4), `gh pr checks --watch`.
-6. Mise à jour de `docs/PLAN.md` (avancement) et rapport du matin `state/night-2026-10-13/MORNING.md` + résumé en français dans la conversation.
-7. Nettoyage : suppression des worktrees (les branches `night/*` restent locales, non poussées).
+5. **Audit sécurité final** par un agent dédié sur le diff complet de la nuit (`git diff slice/1-rouge...slice/1-rouge-night`) : secrets, fichiers `.env`, droits, injections, en-têtes, dépendances. Correction de tout bloquant avant de pousser.
+6. Push de `slice/1-rouge-night`, PR **brouillon** vers `slice/1-rouge` (empilée sur la PR #4), `gh pr checks --watch`.
+7. Mise à jour de `docs/PLAN.md` (avancement) et rapport du matin `state/night-2026-10-13/MORNING.md` + résumé en français dans la conversation.
+8. Nettoyage : suppression des worktrees (les branches `night/*` restent locales, non poussées).
 
 ## 5. Critères de fin (Definition of done)
 
@@ -61,6 +64,7 @@ Chaque chantier se termine par : typecheck + lint + tests unitaires + `pnpm db:t
 - [ ] Scripts Rouge testés en local, refus prouvé sans `--target prod` explicite.
 - [x] Migration `0003` couverte par des tests ; `pnpm db:test` vert (47 checks).
 - [ ] Aucun secret (gitleaks), aucun push sur `main`, aucune fusion, aucune action externe.
+- [ ] `docs/SECURITY.md` : menaces, protections en place, risques restants, liste de contrôle de mise en ligne (actions humaines : 2FA, CAPTCHA, sauvegardes…). Dépendances : aucune faille haute/critique non justifiée dans le code livré aux navigateurs. Audit sécurité final sans bloquant.
 - [ ] `MORNING.md` : ce qui est fait, comment c'est vérifié, ce qui reste, décisions à prendre, prochaines commandes.
 
 ## 6. Si quelque chose bloque
