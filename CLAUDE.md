@@ -38,6 +38,7 @@ Outly is a Sydney going-out app: three products (customer app, partner venue app
 - `pnpm db:start` / `pnpm db:stop` — local Supabase (Docker)
 - `pnpm db:reset` — reset local Supabase and apply migrations + demo seed
 - `pnpm env:local` — write `apps/*/.env.local` from the running local Supabase
+- `pnpm db:seed-users` — create the local demo accounts (admin / manager / door / bar / guest, see `docs/SETUP.md`); rerun after every `db:reset`. Refuses any non-local Supabase.
 - `pnpm db:test` — migrations + seed + RLS smoke tests on a throwaway Postgres (no Docker)
 - `pnpm db:types` — regenerate `packages/db/src/types.ts`
 - `pnpm typecheck`, `pnpm lint`, `pnpm test`

@@ -18,3 +18,4 @@
 ## Journal
 
 - 2026-10-13 — préparation terminée, plan écrit.
+- 2026-10-13 — en attendant le « go » : README à jour, `db:seed-users` documenté dans CLAUDE.md, offre de démo du Velvet Tram corrigée (l'offre Outly démarre éteinte, comme pour Rouge). 36 tests verts.
