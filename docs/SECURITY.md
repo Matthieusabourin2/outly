@@ -101,7 +101,8 @@
 - [ ] Vercel : *Deployment Protection* sur les previews.
 
 **Le soir de Rouge**
-- [ ] Comptes du personnel : un par personne, créés par le script, mot de passe fort transmis en main propre ; **désactivés le lendemain**.
+- [ ] Comptes du personnel : un par personne, créés par `pnpm rouge:staff` (en production : **invitation par email**, la personne choisit son mot de passe — `docs/DEPLOY.md` § 5.3) ; jamais de mot de passe envoyé par message ; **désactivés le lendemain**.
+- [ ] CAPTCHA : la clé de site Turnstile est sur **les deux sites** (client et équipe) — sinon, une fois activé dans Supabase, les vigiles ne peuvent plus se connecter.
 - [ ] Une personne de l'équipe Outly surveille les signalements et peut suspendre un compte.
 - [ ] Plan B à la porte : si le site ne répond pas, la file normale avec le billet.
 

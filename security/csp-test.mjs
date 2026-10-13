@@ -89,7 +89,7 @@ const staffDir = join(OUT, 'staff');
 if (!flag('--no-build') || !existsSync(join(customerDir, 'index.html')) || !existsSync(join(staffDir, 'index.html'))) {
   mkdirSync(OUT, { recursive: true });
   build('@outly/customer', customerDir, { EXPO_PUBLIC_TURNSTILE_SITE_KEY: TURNSTILE_TEST_SITE_KEY });
-  build('@outly/partner', staffDir, {});
+  build('@outly/partner', staffDir, { EXPO_PUBLIC_TURNSTILE_SITE_KEY: TURNSTILE_TEST_SITE_KEY });
 }
 
 // ---------- 2. static servers that send the CSP ----------

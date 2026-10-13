@@ -65,7 +65,7 @@ scenario('customer: sign up, 18+ check, join as classic, QR pass, ghost, delete 
   assert.ok(userId, 'the customer is signed in');
   const { data: booking, error } = await mine.from('bookings').select('id, qr_nonce, status, attendee_visibility').single();
   assert.ifError(error);
-  assert.equal(decoded, `OUTLY1:${booking.id}:${booking.qr_nonce}`);
+  assert.equal(decoded, `OUTLY1:${booking.id}:${booking.qr_nonce}`.toUpperCase(), 'the QR carries the upper-case pass code');
   assert.equal(booking.status, 'confirmed');
   assert.equal(booking.attendee_visibility, 'classic');
 

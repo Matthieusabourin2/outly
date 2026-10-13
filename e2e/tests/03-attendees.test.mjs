@@ -73,11 +73,8 @@ scenario('customer: attendee list with ghost / classic, report and block', async
   await h.shot(pb, 'bea-after-block');
 });
 
-// Known app bug, kept visible as a skipped test until it is fixed:
-// apps/customer/src/components/AttendeeRow.tsx:49 calls onChanged() right after blocking; the Night list
-// reloads, the blocked person's row unmounts together with its sheet, and the confirmation
-// "@x is blocked. You won't see each other on Outly." disappears after a few milliseconds (no "Done").
-// Seen failing on 14 Oct 2026 (the confirmation was never visible to the test). Remove `skip` once the reload waits for the sheet to close.
+// Regression test for the bug found on 14 Oct 2026: the confirmation used to vanish because the list reloaded
+// and unmounted the row's sheet. It now lives on the Night screen (fixed in the hardening workstream).
 scenario(
   'customer: the block confirmation stays on screen until "Done"',
   async (h) => {
@@ -90,12 +87,13 @@ scenario(
     await button(pa, `Options for @${bea.username}`).click();
     await button(pa, 'Block').click();
     await button(pa, `Block @${bea.username}`).click();
-    await see(pa, `@${bea.username} is blocked. You won't see each other on Outly.`);
+    await see(pa, `@${bea.username} is blocked`);
+    await see(pa, 'You won’t see each other on Outly.');
     // Still there once the list has reloaded.
     await pa.waitForLoadState('networkidle');
-    await see(pa, `@${bea.username} is blocked. You won't see each other on Outly.`, 2_000);
+    await see(pa, `@${bea.username} is blocked`, 2_000);
     await button(pa, 'Done').click();
-    await gone(pa, `@${bea.username}`);
+    await gone(pa, `@${bea.username} is blocked`);
+    await notSee(pa, `@${bea.username}`);
   },
-  { skip: 'app bug: AttendeeRow.tsx:49 reloads the list right after blocking, which unmounts the confirmation sheet (see e2e report)' },
 );

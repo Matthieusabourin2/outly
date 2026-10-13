@@ -62,7 +62,8 @@ export async function passCodeOf(client) {
   return { booking: data, code: `OUTLY1:${data.id}:${data.qr_nonce}` };
 }
 
-export const PASS_CODE = /^OUTLY1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// The pass QR carries the code in upper case (smaller QR, see core passQrValue); the database parses it case-insensitively.
+export const PASS_CODE = /^OUTLY1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Waits for the 6-digit sign-in code sent to this address (local Mailpit API). */
 export async function waitForEmailCode(email, { timeoutMs = 30_000 } = {}) {

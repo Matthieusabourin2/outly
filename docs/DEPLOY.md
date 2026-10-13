@@ -154,7 +154,7 @@ Détails de sécurité (pourquoi SPF/DKIM/DMARC) : `docs/SECURITY.md` § 5.
 
 ### 2.7 CAPTCHA et limites du soir de Rouge — lire `docs/SECURITY.md`
 
-- **CAPTCHA Cloudflare Turnstile** : la procédure complète est dans `docs/SECURITY.md` § 5 (« CAPTCHA Turnstile activé ») : clé **secrète** dans Supabase (*Authentication → Bot and Abuse Protection*), clé **de site** (publique) dans `EXPO_PUBLIC_TURNSTILE_SITE_KEY` du site client, puis redéploiement.
+- **CAPTCHA Cloudflare Turnstile** : la procédure complète est dans `docs/SECURITY.md` § 5 (« CAPTCHA Turnstile activé ») : clé **secrète** dans Supabase (*Authentication → Bot and Abuse Protection*), clé **de site** (publique) dans `EXPO_PUBLIC_TURNSTILE_SITE_KEY` **du site client ET du site équipe** (le widget Cloudflare doit autoriser les deux domaines), puis redéploiement des deux. ✅ CHECK juste après : un vigile de test se connecte au site équipe.
   - ⚠️ **À tester avant le soir** : une fois le CAPTCHA activé dans Supabase, Supabase l'exige aussi pour la **connexion par mot de passe**. Le site **équipe** (et l'admin) n'ont pas de CAPTCHA aujourd'hui : il faut vérifier, juste après l'activation, qu'un compte vigile arrive encore à se connecter sur `https://staff.<domaine>`. Si ce n'est pas le cas, désactiver le CAPTCHA et prévenir Gabriel (voir « Questions » dans le rapport de la nuit du 13 oct.).
 - **Limites de débit le soir même** (`docs/SECURITY.md` § 4) : au club, des centaines d'invités partagent **une seule adresse IP** (Wi-Fi du club, 4G de l'opérateur). Avec la limite locale (`sign_in_sign_ups = 30` par 5 minutes et par IP), les vrais invités seraient bloqués à l'entrée. Dans *Authentication → Rate Limits*, pour la soirée :
   - inscriptions + connexions par IP : relever (ex. **300 / 5 min**) ;
@@ -196,7 +196,7 @@ pnpm check:secrets apps/customer/dist apps/partner/dist   # aucun secret dans le
 | `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | oui | oui | Supabase → *Project Settings → API Keys* → clé **publishable** (`sb_publishable_…`). **Jamais** la clé `secret` / `service_role` |
 | `EXPO_PUBLIC_GOOGLE_SIGN_IN` | oui | — | `on` quand Google est prêt (§ 2.6), sinon `off` |
 | `EXPO_PUBLIC_PRIVACY_EMAIL` | oui | — | l'adresse de contact « vie privée » affichée sur `/privacy` |
-| `EXPO_PUBLIC_TURNSTILE_SITE_KEY` | oui | — | clé **de site** Turnstile (publique) ; vide = pas de CAPTCHA |
+| `EXPO_PUBLIC_TURNSTILE_SITE_KEY` | oui | **oui** | clé **de site** Turnstile (publique) ; vide = pas de CAPTCHA. **À mettre sur les deux sites** : une fois le CAPTCHA activé dans Supabase, il est aussi exigé à la connexion du personnel, sinon les vigiles ne peuvent plus se connecter |
 | `NODE_VERSION` (Cloudflare seulement) | `24` | `24` | version de Node pour la compilation |
 
 > **Important — les valeurs sont figées à la compilation.** Les variables `EXPO_PUBLIC_*` sont recopiées dans le JavaScript du site au moment du build. Changer une valeur dans le tableau de bord **ne change rien** tant qu'on n'a pas **relancé un déploiement**. En local, `expo export` garde un cache des fichiers transformés : sans `--clear`, un nouveau build peut garder l'**ancienne** valeur (constaté : un 2ᵉ build gardait l'ancienne URL Supabase). C'est pourquoi `build:web` lance toujours `expo export … --clear` (quelques secondes de plus).

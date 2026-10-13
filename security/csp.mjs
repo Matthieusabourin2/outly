@@ -61,7 +61,9 @@ const STAFF = {
   ...COMMON,
   // 'wasm-unsafe-eval' lets the page compile WebAssembly (the QR reader fallback) without
   // allowing JavaScript eval().
-  'script-src': ["'self'", "'wasm-unsafe-eval'"],
+  // + Turnstile: once the bot check is on in Supabase Auth it also guards staff password sign-in.
+  'script-src': ["'self'", "'wasm-unsafe-eval'", TURNSTILE],
+  'frame-src': [TURNSTILE],
   // + the QR reader's WebAssembly file (fetched with fetch()).
   'connect-src': [...COMMON['connect-src'], ZXING_WASM_URL],
   // Camera preview: a MediaStream in a <video>, blob: for frames.

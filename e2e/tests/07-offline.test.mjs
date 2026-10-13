@@ -23,8 +23,8 @@ scenario('staff: door scan while offline says "No connection", then works when b
   await door.context().setOffline(true);
   await tap(door, 'Open door scanner');
   await allowCameraIfAsked(door);
-  await see(door, 'No connection', CAMERA_TIMEOUT_MS);
-  await see(door, 'Passes can’t be checked right now. Use the normal line.');
+  // The offline banner also says "No connection": wait for the scan RESULT's own instruction.
+  await see(door, 'Passes can’t be checked right now. Use the normal line.', CAMERA_TIMEOUT_MS);
   await h.shot(door, 'no-connection');
 
   // Network back: scan the same pass again.
