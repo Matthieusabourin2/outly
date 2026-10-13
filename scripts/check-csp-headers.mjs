@@ -32,7 +32,11 @@ const CSP_IN_FILE = /Content-Security-Policy"?\s*[:,]\s*(?:"value"\s*:\s*)?"?([^
 let files = 0;
 for (const [site, { dir, csp }] of Object.entries(SITES)) {
   for (const file of [`${dir}/public/_headers`, `${dir}/vercel.json`]) {
-    if (!existsSync(file)) continue;
+    // Both hosts' files must exist: a deleted file would silently ship a site without its CSP.
+    if (!existsSync(file)) {
+      problems.push(`${file}: missing (each site needs both hosting files, with the ${site} policy from security/csp.mjs)`);
+      continue;
+    }
     files++;
     const values = [...readFileSync(file, 'utf8').matchAll(CSP_IN_FILE)].map((m) => m[1].trim());
     if (values.length === 0) {
@@ -75,4 +79,4 @@ if (problems.length) {
   for (const p of problems) console.error(`  - ${p}`);
   process.exit(1);
 }
-console.log(`✓ CSP policies keep their safety properties; ${files} hosting file(s) carry the tested policy${files ? '' : ' (none yet)'}; QR reader URL matches zxing-wasm ${zxing}`);
+console.log(`✓ CSP policies keep their safety properties; ${files} hosting file(s) carry the tested policy; QR reader URL matches zxing-wasm ${zxing}`);
