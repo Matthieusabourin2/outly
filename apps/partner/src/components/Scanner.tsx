@@ -17,6 +17,8 @@ const OK_AUTO_RESET_MS = 3500;
 const SAME_CODE_COOLDOWN_MS = 6000;
 /** No answer from the server after this long: say so instead of "Checking…" forever on club 4G. */
 const SCAN_TIMEOUT_MS = 8000;
+/** Outcomes where the pass was not checked (network): rescanning the same pass is the fix. */
+const RETRYABLE = new Set<ScanOutcome>(['offline', 'slow', 'error']);
 
 const TONE = {
   ok: { bg: colors.successSoft, fg: colors.success, icon: 'checkmark-circle' as const },
@@ -144,7 +146,9 @@ export function Scanner({ title, texts, onCode }: { title: string; texts: Texts;
         }
       }
       if (!mounted.current) return;
-      last.current = { code: data, at: Date.now() };
+      // A connection problem says "scan again": the same pass is then read straight away
+      // instead of being ignored for the cooldown.
+      last.current = RETRYABLE.has(next.outcome) ? null : { code: data, at: Date.now() };
       setChecking(false);
       setResult(next);
       buzz(next.outcome === 'ok');
