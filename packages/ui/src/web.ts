@@ -66,3 +66,27 @@ export function useKeepScreenOn(active: boolean): void {
     };
   }, [active]);
 }
+
+/**
+ * On iPhone/Safari, expo-font registers the fonts but does not wait for them (its loader is
+ * disabled on WebKit), so the browser downloads each weight the first time it is drawn. A
+ * weight first needed offline (the door result title, 800) then falls back to a serif font.
+ * This forces every family to download up front. Returns true once they are in (or after
+ * `timeoutMs`, so a slow network never blocks the app). Native: returns `ready` as is.
+ */
+export function useFontsPreloaded(families: readonly string[], ready: boolean, timeoutMs = 5000): boolean {
+  const supported = isWeb && typeof document !== 'undefined' && 'fonts' in document;
+  const [done, setDone] = useState(false);
+  const key = families.join('|');
+  useEffect(() => {
+    if (!supported || !ready) return;
+    let cancelled = false;
+    const all = Promise.all(key.split('|').map((family) => document.fonts.load(`16px "${family}"`).catch(() => [])));
+    const timeout = new Promise((resolve) => setTimeout(resolve, timeoutMs));
+    void Promise.race([all, timeout]).then(() => !cancelled && setDone(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [supported, ready, key, timeoutMs]);
+  return supported ? ready && done : ready;
+}

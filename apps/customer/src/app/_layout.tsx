@@ -6,7 +6,8 @@ import {
   PlusJakartaSans_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { Button, EmptyState, Screen, colors } from '@outly/ui';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Button, EmptyState, Screen, colors, fonts, useFontsPreloaded } from '@outly/ui';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -72,7 +73,10 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  // Ionicons is registered here too: expo-font re-inserts its <style> on every registration,
+  // which resets the fonts already downloaded. All registrations first, then the preload.
   const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
@@ -80,7 +84,9 @@ export default function RootLayout() {
     PlusJakartaSans_800ExtraBold,
   });
 
-  if (!fontsLoaded && !fontError) return null;
+  // Every weight downloaded before the first screen: it may be needed later without network.
+  const fontsReady = useFontsPreloaded([...Object.values(fonts), ...Object.keys(Ionicons.font)], fontsLoaded || !!fontError);
+  if (!fontsReady) return null;
 
   return (
     <AuthProvider>
