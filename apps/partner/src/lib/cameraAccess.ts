@@ -20,3 +20,6 @@ export function useCameraAccess(): { access: CameraAccess; request: () => Promis
   const reportError = useCallback((_error: unknown) => undefined, []);
   return { access, request, reportError };
 }
+
+/** Web only (see cameraAccess.web.ts): native camera streams are managed by the OS. */
+export function useCameraSession(_on: boolean): void {}

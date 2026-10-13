@@ -5,7 +5,7 @@ import { useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCameraAccess, type CameraAccess } from '@/lib/cameraAccess';
+import { useCameraAccess, useCameraSession, type CameraAccess } from '@/lib/cameraAccess';
 import { prepareQrReader } from '@/lib/qrReader';
 import { OFFLINE_STAFF_MESSAGE, type ScanOutcome } from '@/lib/scanText';
 
@@ -82,6 +82,7 @@ export function Scanner({ title, texts, onCode }: { title: string; texts: Texts;
 
   const cameraOn = access === 'granted' && focused && appActive;
   useKeepScreenOn(cameraOn);
+  useCameraSession(cameraOn);
 
   useEffect(() => {
     mounted.current = true;

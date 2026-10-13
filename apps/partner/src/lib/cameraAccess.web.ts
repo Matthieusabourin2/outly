@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import type { CameraAccess } from './cameraAccess';
 
 export type { CameraAccess } from './cameraAccess';
@@ -63,4 +63,42 @@ export function useCameraAccess(): { access: CameraAccess; request: () => Promis
   const reportError = useCallback((error: unknown) => setAccess(cameraErrorToAccess(error)), []);
 
   return { access, request, reportError };
+}
+
+/**
+ * expo-camera (web) asks for the camera when its view mounts and stops the streams it holds
+ * when it unmounts, but a stream that arrives AFTER the unmount (staff leave the Door tab or
+ * lock the phone while the camera is still starting) is never stopped: the camera stays on
+ * until the page is reloaded. Each scanner camera is a "session"; a stream requested during a
+ * session that has ended by the time it arrives is stopped at once. Streams requested outside
+ * a session (the "Allow camera" prompt) are left alone.
+ */
+let session = 0;
+let lastSession = 0;
+let patched = false;
+
+function patchGetUserMedia() {
+  const media = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
+  if (patched || !media?.getUserMedia) return;
+  patched = true;
+  const original = media.getUserMedia.bind(media);
+  media.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+    const owner = session;
+    const stream = await original(constraints);
+    if (owner !== 0 && owner !== session) stream.getTracks().forEach((t) => t.stop());
+    return stream;
+  };
+}
+
+/** Call with true while the scanner's camera view is mounted (layout effect: before expo-camera asks). */
+export function useCameraSession(on: boolean): void {
+  useLayoutEffect(() => {
+    if (!on) return;
+    patchGetUserMedia();
+    const id = ++lastSession;
+    session = id;
+    return () => {
+      if (session === id) session = 0;
+    };
+  }, [on]);
 }
