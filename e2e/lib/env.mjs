@@ -12,9 +12,18 @@ export const ARTIFACTS_DIR = join(E2E_DIR, '.artifacts');
 
 export const CUSTOMER_PORT = 8091;
 export const PARTNER_PORT = 8092;
-export const CUSTOMER_URL = process.env.E2E_CUSTOMER_URL ?? `http://127.0.0.1:${CUSTOMER_PORT}`;
-export const PARTNER_URL = process.env.E2E_PARTNER_URL ?? `http://127.0.0.1:${PARTNER_PORT}`;
 export const MAILPIT_URL = 'http://127.0.0.1:54324';
+
+const LOCAL_URL = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
+
+/** The sites under test are always the local exports: never let an environment variable point the browsers elsewhere. */
+function localSiteUrl(name, fallback) {
+  const url = process.env[name] ?? fallback;
+  if (!LOCAL_URL.test(url)) throw new Error(`Refusing to run e2e tests: ${name}=${url} is not a local URL.`);
+  return url;
+}
+export const CUSTOMER_URL = localSiteUrl('E2E_CUSTOMER_URL', `http://127.0.0.1:${CUSTOMER_PORT}`);
+export const PARTNER_URL = localSiteUrl('E2E_PARTNER_URL', `http://127.0.0.1:${PARTNER_PORT}`);
 
 // Demo data (supabase/seed_demo.sql + scripts/seed-demo-users.mjs).
 export const DEMO_PASSWORD = 'OutlyDemo2026!';
@@ -29,8 +38,6 @@ export const STAFF = {
   bar: 'bar@demo.outly',
 };
 
-const LOCAL_URL = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
-
 export function supabaseBin() {
   return join(REPO_ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'supabase.cmd' : 'supabase');
 }
@@ -42,7 +49,8 @@ export function localSupabase() {
   let status;
   try {
     status = JSON.parse(
-      execFileSync(supabaseBin(), ['status', '-o', 'json'], {
+      // Windows runs supabase.cmd through a shell: quote it in case the repo path has spaces.
+      execFileSync(process.platform === 'win32' ? `"${supabaseBin()}"` : supabaseBin(), ['status', '-o', 'json'], {
         cwd: REPO_ROOT,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],

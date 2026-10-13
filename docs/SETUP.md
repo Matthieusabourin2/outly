@@ -83,9 +83,9 @@ pnpm db:start        # si la base locale ne tourne pas déjà (Docker ouvert)
 pnpm e2e             # ~2 minutes
 ```
 
-> ⚠️ `pnpm e2e` **remet la base locale à zéro** (`db:reset` + `db:seed-users`) au début de chaque lancement : tout ce que tu as créé à la main en local est effacé. Il refuse de tourner si Supabase n'est pas local.
+> ⚠️ `pnpm e2e` **remet la base locale à zéro** (`db:reset` + `db:seed-users`) au début de chaque lancement : tout ce que tu as créé à la main en local est effacé. Il refuse de tourner si Supabase (ou `E2E_CUSTOMER_URL` / `E2E_PARTNER_URL`) n'est pas local.
 
-**Ce que fait la commande** (`e2e/run.mjs`) : vérifie que Supabase local tourne, `pnpm env:local`, `db:reset`, `db:seed-users`, cale la soirée de démo sur l'heure actuelle (voir plus bas), compile les deux sites (`expo export --platform web --clear` → `e2e/.dist/`), les sert sur http://127.0.0.1:8091 (client) et http://127.0.0.1:8092 (équipe), puis lance les scénarios un par un (`node --test`), écran de téléphone 390 × 844.
+**Ce que fait la commande** (`e2e/run.mjs`) : vérifie que Supabase local tourne, `db:reset`, `db:seed-users`, cale la soirée de démo sur l'heure actuelle (voir plus bas), compile les deux sites (`expo export --platform web --clear` → `e2e/.dist/`, avec les clés de la base locale passées directement : les fichiers `.env.local` des applis sont ignorés et jamais réécrits), les sert sur http://127.0.0.1:8091 (client) et http://127.0.0.1:8092 (équipe), puis lance les scénarios un par un (`node --test`), écran de téléphone 390 × 844.
 
 **Les 7 scénarios** (`e2e/tests/`, chacun avec ses propres comptes neufs, indépendants de l'ordre) :
 
@@ -101,7 +101,7 @@ pnpm e2e             # ~2 minutes
 
 **La fausse caméra** : Chrome est lancé avec `--use-fake-device-for-media-stream --use-file-for-fake-video-capture=<pass.mjpeg>` ; l'image (640 × 480, QR centré sur fond blanc) est fabriquée en JavaScript (`e2e/lib/qr.mjs`), donc pareil sous macOS et Windows.
 
-**La soirée de démo calée sur l'heure actuelle** : `seed_demo.sql` date la soirée avec la date du calendrier (21 h → 3 h). Remise à zéro entre minuit et 6 h, le site équipe (qui compte « la nuit » jusqu'à 6 h du matin) ne trouverait aucune guest list ce soir. Le lanceur déplace donc la soirée de démo autour de l'heure actuelle (début il y a 1 h, fin dans 6 h) et met l'autre guest list du Velvet Tram la veille, pour que les tests passent à n'importe quelle heure.
+**La soirée de démo calée sur l'heure actuelle** : `seed_demo.sql` date la soirée avec la date du calendrier (21 h → 3 h). Remise à zéro entre minuit et 6 h, le site équipe (qui compte « la nuit » jusqu'à 6 h du matin) ne trouverait aucune guest list ce soir. Le lanceur déplace donc la soirée de démo autour de l'heure actuelle (début il y a 1 h, fin dans 6 h) et met l'autre guest list du Velvet Tram la veille, pour que les tests passent à n'importe quelle heure. Lancé moins de 10 minutes avant 6 h du matin (le changement de « nuit »), il attend 6 h pour ne pas être à cheval dessus.
 
 **Résultats** : captures d'écran des étapes clés (et de toutes les pages ouvertes en cas d'échec) + erreurs de console dans `e2e/.artifacts/<date>/` (les 5 derniers lancements sont gardés, dossier ignoré par Git).
 
