@@ -9,14 +9,26 @@
 // date_of_birth (YYYY-MM-DD) is optional: profiles need one (18+ rule); without it the
 // placeholder below is stored (see docs/DEPLOY.md).
 //
-// Existing accounts are kept as they are (password, profile): only the venue role is added or changed.
-// Roles at the venue for people missing from the CSV are listed, never removed.
+// Accounts are always created CONFIRMED (email_confirm), with a random password:
+//   - local: the password is printed once at the end;
+//   - production (or --invite locally): it is thrown away and the person gets a "choose your
+//     password" email (password recovery link) instead.
+// Never an invitation (inviteUserByEmail): an invited account stays unconfirmed until the link is
+// used, and with "Confirm email" off (SPEC A6) anyone signing up with that address in the meantime
+// would get a session on the staff account (security audit 2026-10-14). A confirmed account
+// answers "already registered" to a sign-up.
+//
+// An email that ALREADY has an account but no role at this venue is refused: it may have been
+// registered by someone else on purpose. After checking with the person face to face, pass
+// --allow-existing <email>[,<email>...]: the account gets a new random password (+ the email
+// in production) before the role is added. Accounts that already have a role here (a re-run) only
+// get their role changed. Roles at the venue for people missing from the CSV are listed, never removed.
 //
 // DRY-RUN BY DEFAULT. Usage (docs/DEPLOY.md § Scripts Rouge):
 //   pnpm rouge:staff --target local --content content/rouge.local.json --csv content/rouge-staff.local.csv [--apply]
 //     local: new accounts get a random password, printed ONCE at the end.
 //   pnpm rouge:staff --target prod --content ... --csv ... --invite-redirect https://<customer site>/reset-password --apply --confirm-prod
-//     production: new accounts get an invitation email (inviteUserByEmail) to choose their password.
+//     production: new accounts get a "choose your password" email (see above).
 import { randomBytes, randomInt } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Refusal, connect, isDate, parseArgs, readJson, run } from './lib.mjs';
@@ -96,7 +108,7 @@ async function allUsersByEmail(db) {
 
 await run(async () => {
   const args = parseArgs(process.argv.slice(2), {
-    valued: ['target', 'content', 'csv', 'invite-redirect'],
+    valued: ['target', 'content', 'csv', 'invite-redirect', 'allow-existing'],
     flags: ['apply', 'confirm-prod', 'invite'],
   });
   if (!args.content) throw new Refusal('--content <file.json> is required (the venue is read from it).');
@@ -113,6 +125,7 @@ await run(async () => {
     const fake = staff.filter((s) => /@(.+\.)?example\.(com|org|net)$/.test(s.email) || /placeholder/i.test(s.email));
     if (fake.length) throw new Refusal(`Refusing to create placeholder accounts in production: ${fake.map((s) => s.email).join(', ')}`);
   }
+  // invite = send a "choose your password" email instead of printing a password.
   const invite = target === 'prod' || Boolean(args.invite);
   const redirectTo = args['invite-redirect'];
   if (invite && target === 'prod' && !/^https:\/\/[^/]+\/reset-password$/.test(redirectTo ?? '')) {
@@ -132,7 +145,7 @@ await run(async () => {
   if (venue.is_demo || venue.partner_status !== 'partner') throw new Refusal(`Venue "${venue.name}" is not a real partner venue.`);
 
   console.log(`${apply ? 'APPLY' : 'DRY-RUN (nothing is written; add --apply)'} — target ${target} (${target === 'local' ? url : new URL(url).host})`);
-  console.log(`Venue: ${venue.name} (${venue.id}) — new accounts ${invite ? 'get an invitation email' : 'get a random password (printed once)'}\n`);
+  console.log(`Venue: ${venue.name} (${venue.id}) — new accounts ${invite ? 'get a "choose your password" email' : 'get a random password (printed once)'}\n`);
 
   const users = await allUsersByEmail(db);
   const memberships = must(await db.from('venue_memberships').select('user_id, role').eq('venue_id', venue.id), 'read venue roles');
@@ -141,6 +154,21 @@ await run(async () => {
   const profiles = knownIds.length ? must(await db.from('profiles').select('id').in('id', knownIds), 'read profiles') : [];
   const hasProfile = new Set(profiles.map((p) => p.id));
 
+  // An existing account with no role here may have been registered by someone else: refuse it
+  // unless it was checked in person (--allow-existing). Checked before anything is written.
+  const allowExisting = new Set((args['allow-existing'] ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean));
+  const unknownAllowed = [...allowExisting].filter((e) => !staff.some((s) => s.email === e));
+  if (unknownAllowed.length) throw new Refusal(`--allow-existing names email(s) that are not in the CSV: ${unknownAllowed.join(', ')}`);
+  const squatted = staff.filter((s) => users.has(s.email) && !roleOf.has(users.get(s.email).id) && !allowExisting.has(s.email));
+  if (squatted.length) {
+    throw new Refusal(
+      `These emails already have an Outly account with no role at ${venue.name}:\n  - ${squatted.map((s) => s.email).join('\n  - ')}\n` +
+        'Someone else may have registered them. Check with each person face to face, then re-run with\n' +
+        `  --allow-existing ${squatted.map((s) => s.email).join(',')}\n` +
+        '(their password is replaced and they choose a new one), or use another email.',
+    );
+  }
+
   const passwords = [];
   let changes = 0;
   try {
@@ -148,20 +176,24 @@ await run(async () => {
       const existing = users.get(s.email);
       let userId = existing?.id ?? null;
       const steps = [];
+      let sendPasswordEmail = false;
       if (!existing) {
-        steps.push(invite ? 'invite new account' : 'create account');
+        steps.push(invite ? 'create account + "choose your password" email' : 'create account');
         if (apply) {
-          if (invite) {
-            const { data, error } = await db.auth.admin.inviteUserByEmail(s.email, { redirectTo });
-            if (error) throw new Error(`invite ${s.email}: ${error.message}`);
-            userId = data.user.id;
-          } else {
-            const password = randomPassword();
-            const { data, error } = await db.auth.admin.createUser({ email: s.email, password, email_confirm: true });
-            if (error) throw new Error(`create ${s.email}: ${error.message}`);
-            userId = data.user.id;
-            passwords.push({ email: s.email, password });
-          }
+          const password = randomPassword();
+          const { data, error } = await db.auth.admin.createUser({ email: s.email, password, email_confirm: true });
+          if (error) throw new Error(`create ${s.email}: ${error.message}`);
+          userId = data.user.id;
+          if (invite) sendPasswordEmail = true;
+          else passwords.push({ email: s.email, password });
+        }
+      } else if (allowExisting.has(s.email) && !roleOf.has(existing.id)) {
+        steps.push(`existing account (checked in person): new password${invite ? ' + "choose your password" email' : ''}`);
+        if (apply) {
+          const password = randomPassword();
+          must(await db.auth.admin.updateUserById(existing.id, { password, email_confirm: true }), `new password ${s.email}`);
+          if (invite) sendPasswordEmail = true;
+          else passwords.push({ email: s.email, password });
         }
       }
       if (!userId || !hasProfile.has(userId)) {
@@ -189,6 +221,11 @@ await run(async () => {
           );
         }
       }
+      if (sendPasswordEmail) {
+        // Sent once the account, profile and role exist. The service key skips the CAPTCHA.
+        const { error } = await db.auth.resetPasswordForEmail(s.email, { redirectTo });
+        if (error) throw new Error(`"choose your password" email to ${s.email}: ${error.message} (account and role are created: re-send it from the Supabase dashboard, Authentication → Users → Send password recovery)`);
+      }
       if (steps.length) changes++;
       console.log(`${steps.length ? (existing ? '~' : '+') : '='} ${s.email.padEnd(32)} ${s.role.padEnd(14)} ${steps.length ? steps.join(', ') : 'unchanged'}`);
     }
@@ -213,5 +250,5 @@ await run(async () => {
     return;
   }
   console.log(`\n✓ Done: ${changes} account(s) changed.`);
-  if (invite && changes) console.log('\nInvited staff choose their password from the email link, then sign in on the staff site.');
+  if (invite && changes) console.log('\nNew staff choose their password from the email link ("Choose a new password"), then sign in on the staff site.');
 });

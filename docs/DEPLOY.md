@@ -121,7 +121,7 @@ Le fichier `supabase/config.toml` décrit les réglages **locaux** ; le projet h
 |---|---|---|
 | **Magic Link** (code de connexion) | `Your Outly code` | contenu de `supabase/templates/magic_link.html` |
 | **Confirm signup** | `Welcome to Outly` | contenu de `supabase/templates/confirmation.html` |
-| **Invite user** (invitation du personnel, § 5.3) | ex. `You're invited to Outly Staff` | non fourni dans le dépôt : le modèle par défaut marche ; à personnaliser si on veut |
+| **Reset Password** (mot de passe oublié, **et** premier mot de passe du personnel, § 5.3) | ex. `Choose your Outly password` | non fourni dans le dépôt : le modèle par défaut (un lien) marche ; à personnaliser si on veut |
 
 Les deux modèles du dépôt affichent un **code à 6 chiffres** (`{{ .Token }}`) valable 10 minutes, pas un lien.
 
@@ -347,10 +347,12 @@ unset SUPABASE_SERVICE_ROLE_KEY                                          # ferme
 ```
 
 - La clé service se trouve dans Supabase → *Project Settings → API Keys* (clé **secret**). Elle ne doit **jamais** être collée dans un fichier, un message ou une variable `EXPO_PUBLIC_*`.
-- En production, chaque nouveau membre du personnel reçoit un **email d'invitation** (modèle « Invite user », § 2.4). Le lien ouvre `https://<domaine>/reset-password` (le site client) où la personne choisit son mot de passe ; ensuite elle se connecte sur `https://staff.<domaine>`. L'adresse `https://<domaine>/**` doit être dans les Redirect URLs (§ 2.4).
-- Les comptes qui existent déjà (ex. un vigile qui avait déjà un compte invité) gardent leur mot de passe et leur profil : le script ajoute seulement le rôle.
+- En production, le script crée chaque compte **déjà confirmé**, avec un mot de passe aléatoire jeté aussitôt, puis envoie un email **« choisir son mot de passe »** (modèle « Reset Password », § 2.4). Le lien ouvre `https://<domaine>/reset-password` (le site client) où la personne choisit son mot de passe ; ensuite elle se connecte sur `https://staff.<domaine>`. L'adresse `https://<domaine>/**` doit être dans les Redirect URLs (§ 2.4).
+- **Pourquoi pas une « invitation » Supabase** : un compte invité reste non confirmé jusqu'au clic, et comme la confirmation d'email est désactivée (SPEC A6), n'importe qui s'inscrivant avec l'adresse du vigile pendant ce temps recevait une session **sur le compte du vigile** (audit sécurité du 14 oct., prouvé en local). Un compte confirmé répond « déjà inscrit ».
+- **Adresse qui a déjà un compte Outly** sans rôle au lieu : le script **refuse** (quelqu'un a pu créer ce compte exprès pour récupérer le rôle). Vérifier **en personne** avec le vigile que c'est bien son compte, puis relancer avec `--allow-existing <email>` : son mot de passe est remplacé et il reçoit l'email pour en choisir un nouveau. Les comptes qui ont **déjà** un rôle à ce lieu (relance du script) ne changent que de rôle.
+- Si l'email « choisir son mot de passe » n'arrive pas : Supabase → *Authentication → Users* → le compte → **Send password recovery**.
 - Les personnes qui ont un rôle au lieu mais ne sont **pas** dans le CSV sont listées, jamais supprimées.
-- **Après la soirée** : désactiver les comptes du personnel (`docs/SECURITY.md` § 5 « Le soir de Rouge ») — Supabase → *Authentication → Users* → le compte → **Ban user** (ou supprimer).
+- **Après la soirée** : désactiver les comptes du personnel (`docs/SECURITY.md` § 5 « Le soir de Rouge ») — Supabase → *Authentication → Users* → le compte → **Ban user**. **Ne pas supprimer** les comptes : le bannissement suffit et garde l'historique propre (depuis 0006, supprimer un compte ne supprime plus ses scans, mais rien ne sert de le faire).
 
 ---
 
@@ -404,7 +406,7 @@ unset SUPABASE_SERVICE_ROLE_KEY                                          # ferme
 | `pnpm build:staff-web` | Compile le site équipe dans `apps/partner/dist` |
 | `pnpm check:secrets <dossiers dist>` | Vérifie qu'aucun secret n'est dans les sites compilés |
 | `pnpm rouge:setup --target local\|prod --content <json> [--apply] [--confirm-prod]` | Lieu, soirée, guest list, line-up (§ 5) |
-| `pnpm rouge:staff --target local\|prod --content <json> --csv <csv> [--apply] [--confirm-prod] [--invite-redirect <url>]` | Comptes du personnel (§ 5). En local, `--invite` teste l'invitation (l'email arrive dans Mailpit, http://127.0.0.1:54324) |
+| `pnpm rouge:staff --target local\|prod --content <json> --csv <csv> [--apply] [--confirm-prod] [--invite-redirect <url>] [--allow-existing <emails>]` | Comptes du personnel (§ 5). En local, `--invite` teste l'email « choisir son mot de passe » (il arrive dans Mailpit, http://127.0.0.1:54324) |
 | `pnpm exec supabase db push` | Applique les migrations au projet lié (§ 2.2) |
 | `pnpm exec supabase functions deploy delete-account` | Déploie la fonction serveur (§ 2.3) |
 | `pnpm exec supabase secrets set ALLOWED_ORIGINS=…` | Secret de la fonction (§ 2.3) |
