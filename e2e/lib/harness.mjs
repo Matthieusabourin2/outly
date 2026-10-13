@@ -80,9 +80,12 @@ class Harness {
   }
 }
 
-/** One independent scenario: its own browsers and data; screenshots of every open page if it fails. */
+/**
+ * One independent scenario: its own browsers and data; screenshots of every open page if it fails.
+ * `skip`: reason (a known app bug); E2E_RUN_SKIPPED=1 runs it anyway, to check whether the bug is fixed.
+ */
 export function scenario(name, fn, { skip } = {}) {
-  test(name, { timeout: SCENARIO_TIMEOUT_MS, skip }, async () => {
+  test(name, { timeout: SCENARIO_TIMEOUT_MS, skip: process.env.E2E_RUN_SKIPPED === '1' ? false : skip }, async () => {
     const h = new Harness(name);
     try {
       await fn(h);
