@@ -65,4 +65,4 @@ insert into event_sets (event_id, artist_name, starts_at, ends_at, sort) values
 
 insert into deals (id, venue_id, title, description, categories, source, status, is_demo) values
  ('00000000-0000-4000-d000-000000000001','00000000-0000-4000-a000-000000000002','10% off cocktails for Outly members',
-  'Show your Outly pass at the bar. Please drink responsibly.','{drinks}','demo','draft',true);
+  'All night at the main bar, one per pass.','{drinks}','demo','draft',true);

@@ -1,5 +1,6 @@
 import { sydneyNight, toUserMessage } from '@outly/core';
 import type { Enums } from '@outly/db';
+import { startVisiblePolling } from '@outly/ui';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { useAuth } from './auth';
@@ -112,13 +113,8 @@ export function useNight() {
     }
   }, [userId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-      const timer = setInterval(() => void load(), REFRESH_MS);
-      return () => clearInterval(timer);
-    }, [load]),
-  );
+  // Live while the screen is focused AND the tab/app is visible (no polling from a phone in a pocket).
+  useFocusEffect(useCallback(() => startVisiblePolling(() => void load(), REFRESH_MS), [load]));
 
   return { ...state, reload: load };
 }

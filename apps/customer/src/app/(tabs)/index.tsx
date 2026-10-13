@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { sydneyDay, sydneyTime, toUserMessage } from '@outly/core';
+import { isNightOver, sydneyDay, sydneyTime, toUserMessage } from '@outly/core';
 import type { Enums } from '@outly/db';
 import { Avatar, Button, Card, EmptyState, Screen, SourceLabel, Text, colors, radii, spacing } from '@outly/ui';
 import { router } from 'expo-router';
@@ -11,6 +11,9 @@ import { VisibilityChoice } from '@/components/VisibilityChoice';
 import { useAuth } from '@/lib/auth';
 import { useNight } from '@/lib/night';
 import { supabase } from '@/lib/supabase';
+
+/** Shown under every drinks offer (responsible service, SPEC §10). */
+const OFFER_REMINDER = 'Show your Outly pass at the bar. Please drink responsibly.';
 
 export default function NightScreen() {
   const { profile } = useAuth();
@@ -56,6 +59,7 @@ export default function NightScreen() {
   const event = night.event;
   const sets = [...(event?.sets ?? [])].sort((a, b) => a.sort - b.sort);
   const full = !!stats && stats.remaining <= 0;
+  const over = isNightOver(event?.starts_at, event?.ends_at);
   const progress = stats && stats.capacity > 0 ? Math.min(1, stats.joined / stats.capacity) : 0;
 
   return (
@@ -101,7 +105,12 @@ export default function NightScreen() {
         </View>
       ) : null}
 
-      {booking ? (
+      {over ? (
+        <Card>
+          <Text variant="bodyStrong">This night is over</Text>
+          <Text tone="secondary">Thanks for coming. The next Outly night will show up here.</Text>
+        </Card>
+      ) : booking ? (
         <Button label={booking.status === 'checked_in' ? "You're in. See your pass" : 'Show my pass'} onPress={() => router.navigate('/pass')} />
       ) : full ? (
         <Card>
@@ -112,7 +121,7 @@ export default function NightScreen() {
         <Button label="Join the Outly list" onPress={() => setJoinOpen(true)} />
       )}
 
-      {offer ? (
+      {offer && !over ? (
         <Card>
           <View style={styles.offerHead}>
             <Text variant="micro" tone="accent" style={styles.flex}>
@@ -121,9 +130,9 @@ export default function NightScreen() {
             <SourceLabel source={offer.source} />
           </View>
           <Text variant="bodyStrong">{offer.title}</Text>
-          {offer.description ? <Text tone="secondary">{offer.description}</Text> : null}
+          {offer.description && offer.description.trim() !== OFFER_REMINDER ? <Text tone="secondary">{offer.description}</Text> : null}
           <Text variant="caption" tone="muted">
-            Show your Outly pass at the bar. Please drink responsibly.
+            {OFFER_REMINDER}
           </Text>
         </Card>
       ) : null}

@@ -25,3 +25,13 @@ export function sydneyDay(isoOrDate: string): string {
     .format(date)
     .replace(',', '');
 }
+
+/** Events without an end time are considered over this long after they start. */
+export const DEFAULT_EVENT_HOURS = 8;
+
+/** True once the event has finished: after its end time, or DEFAULT_EVENT_HOURS after its start. */
+export function isNightOver(startsAt: string | null | undefined, endsAt: string | null | undefined, now: Date = new Date()): boolean {
+  if (endsAt) return now.getTime() > new Date(endsAt).getTime();
+  if (startsAt) return now.getTime() > new Date(startsAt).getTime() + DEFAULT_EVENT_HOURS * 3600 * 1000;
+  return false;
+}

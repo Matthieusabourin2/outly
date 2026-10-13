@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sydneyDay, sydneyNight, sydneyTime } from './night';
+import { isNightOver, sydneyDay, sydneyNight, sydneyTime } from './night';
 
 describe('Sydney night', () => {
   it('keeps 1am in the previous night', () => {
@@ -12,5 +12,21 @@ describe('Sydney night', () => {
   it('formats times and days in Sydney', () => {
     expect(sydneyTime('2026-10-24T10:30:00Z')).toBe('9:30pm');
     expect(sydneyDay('2026-10-24')).toBe('Sat 24 Oct');
+  });
+});
+
+describe('isNightOver', () => {
+  const start = '2026-10-24T10:00:00Z'; // 9pm Sydney
+  const end = '2026-10-24T16:00:00Z'; // 3am Sydney
+  it('uses the end time when there is one', () => {
+    expect(isNightOver(start, end, new Date('2026-10-24T15:59:00Z'))).toBe(false);
+    expect(isNightOver(start, end, new Date('2026-10-24T16:01:00Z'))).toBe(true);
+  });
+  it('falls back to 8 hours after the start', () => {
+    expect(isNightOver(start, null, new Date('2026-10-24T17:59:00Z'))).toBe(false);
+    expect(isNightOver(start, null, new Date('2026-10-24T18:01:00Z'))).toBe(true);
+  });
+  it('is never over without any time', () => {
+    expect(isNightOver(null, null)).toBe(false);
   });
 });

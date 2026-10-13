@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { makePassCode, sydneyDay, sydneyTime } from '@outly/core';
+import { isNightOver, makePassCode, sydneyDay, sydneyTime } from '@outly/core';
 import { Avatar, Button, Card, EmptyState, Screen, Text, colors, radii, spacing } from '@outly/ui';
 import { router } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -41,6 +41,18 @@ export default function PassScreen() {
           icon={<Ionicons name="checkmark-circle" size={64} color={colors.success} />}
           title="You're in!"
           message={`Checked in at ${venue}${booking.checked_in_at ? ` at ${sydneyTime(booking.checked_in_at)}` : ''}. Have a great night.`}
+        />
+      </Screen>
+    );
+  }
+
+  if (isNightOver(night.event?.starts_at, night.event?.ends_at)) {
+    return (
+      <Screen scroll={false}>
+        <EmptyState
+          icon={<Ionicons name="moon-outline" size={44} color={colors.accent} />}
+          title="This night is over"
+          message="Your pass is no longer valid. See you at the next Outly night."
         />
       </Screen>
     );
