@@ -9,6 +9,8 @@
     "dev:customer": "pnpm --filter @outly/customer start",
     "dev:partner": "pnpm --filter @outly/partner start",
     "dev:admin": "pnpm --filter @outly/admin dev",
+    "build:customer-web": "pnpm --filter @outly/customer build:web",
+    "build:staff-web": "pnpm --filter @outly/partner build:web",
     "db:reset": "supabase db reset",
     "db:test": "node scripts/db-test.mjs",
     "db:types": "node scripts/db-types.mjs",
