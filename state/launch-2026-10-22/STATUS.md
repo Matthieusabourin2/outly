@@ -25,4 +25,5 @@
 - 👤 Infos de Rouge → 💻 `rouge:setup`, `rouge:staff --print-passwords`, test sur la vraie soirée.
 - 👤 Test sur vrais téléphones (iPhone + Android).
 - 👤 (Option) Resend : emails de code, mot de passe oublié, emails du personnel → republier avec `--emails on`.
+- 💻 Après Rouge : supprimer la vue `public_profiles` (inutilisée ; signalée par le conseiller Supabase) — migration 0007 + test H3.
 - 👤 Après Rouge : changer le mot de passe de la base (passé dans la conversation), bannir les comptes du personnel.
