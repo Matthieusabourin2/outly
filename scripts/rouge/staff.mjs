@@ -29,6 +29,9 @@
 //     local: new accounts get a random password, printed ONCE at the end.
 //   pnpm rouge:staff --target prod --content ... --csv ... --invite-redirect https://<customer site>/reset-password --apply --confirm-prod
 //     production: new accounts get a "choose your password" email (see above).
+//   pnpm rouge:staff --target prod ... --print-passwords --apply --confirm-prod
+//     production WITHOUT an email provider (Supabase's default mailer only reaches the project team):
+//     passwords are printed once, like locally, to be handed over in person. Accounts are still confirmed.
 import { randomBytes, randomInt } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Refusal, connect, isDate, parseArgs, readJson, run } from './lib.mjs';
@@ -109,7 +112,7 @@ async function allUsersByEmail(db) {
 await run(async () => {
   const args = parseArgs(process.argv.slice(2), {
     valued: ['target', 'content', 'csv', 'invite-redirect', 'allow-existing'],
-    flags: ['apply', 'confirm-prod', 'invite'],
+    flags: ['apply', 'confirm-prod', 'invite', 'print-passwords'],
   });
   if (!args.content) throw new Refusal('--content <file.json> is required (the venue is read from it).');
   if (!args.csv) throw new Refusal('--csv <file.csv> is required (email,role[,date_of_birth]).');
@@ -119,14 +122,15 @@ await run(async () => {
   const staff = readCsv(args.csv);
   const { target, url, client: db } = connect(args);
   const apply = Boolean(args.apply);
-  // Production always invites; locally, --invite tests the same path (the email lands in Mailpit).
+  // Production sends "choose your password" emails unless --print-passwords; locally, --invite tests the email path (Mailpit).
   if (target === 'prod') {
     // The template CSV uses example.com addresses: never create those accounts (or give them a venue role) in production.
     const fake = staff.filter((s) => /@(.+\.)?example\.(com|org|net)$/.test(s.email) || /placeholder/i.test(s.email));
     if (fake.length) throw new Refusal(`Refusing to create placeholder accounts in production: ${fake.map((s) => s.email).join(', ')}`);
   }
   // invite = send a "choose your password" email instead of printing a password.
-  const invite = target === 'prod' || Boolean(args.invite);
+  const invite = (target === 'prod' && !args['print-passwords']) || Boolean(args.invite);
+  if (args['print-passwords'] && args.invite) throw new Refusal('--print-passwords and --invite cannot be used together.');
   const redirectTo = args['invite-redirect'];
   if (invite && target === 'prod' && !/^https:\/\/[^/]+\/reset-password$/.test(redirectTo ?? '')) {
     throw new Refusal('--invite-redirect https://<customer site>/reset-password is required in production (where invited staff choose their password).');
