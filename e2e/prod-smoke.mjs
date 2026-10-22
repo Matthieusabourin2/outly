@@ -121,10 +121,10 @@ try {
     await s.getByRole('button', { name: 'Open door scanner' }).click();
     // Before the night, the server answers "Not for tonight"; on the night, "OK".
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Sydney' }).format(new Date());
-    const expected = today === args.night ? /^OK/ : 'Not for tonight';
+    const expected = today === args.night ? 'Fast lane OK' : 'Not for tonight';
     await see(s, expected, 45_000);
     await s.screenshot({ path: join(shots, 'scan.png') });
-    step(`pass scanned with the camera, server answered "${today === args.night ? 'OK' : 'Not for tonight'}" (night ${args.night})`);
+    step(`pass scanned with the camera, server answered "${today === args.night ? 'Fast lane OK' : 'Not for tonight'}" (night ${args.night})`);
   } finally {
     await staffBrowser.close();
   }
