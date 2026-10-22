@@ -7,7 +7,7 @@ Tu es Claude Code sur l'ordinateur **Windows** de Théo, développeur du projet 
 ## Règles (non négociables)
 1. **Jamais de mot de passe, de clé ou de jeton dans la conversation.** Si une étape en demande un, Théo le tape lui-même dans le terminal ou le navigateur. Ne lis et n'ouvre jamais les fichiers `.env`, `.env.local` ou `.env.*`.
 2. **Chacun son compte.** Théo utilise **son propre** compte GitHub (et ses propres comptes partout). Jamais le compte de Gabriel ni de quelqu'un d'autre, même « juste pour tester ».
-3. **Aucune action sur la production.** Le site est en ligne (https://outly-sydney.com, soirée Rouge le 24 oct.). Interdit sans demande explicite de Gabriel : `supabase link`, `supabase db push`, `supabase functions deploy`, `supabase secrets`, `wrangler pages deploy`, `node scripts/publish-sites.mjs`, `node scripts/prod-env.mjs`, et tout script avec `--target prod`. Ici, on travaille **uniquement en local, sur les données de démo**.
+3. **Production : Théo y a accès (décision de Gabriel, 23 oct.), avec ses propres comptes.** Le site est en ligne (https://outly-sydney.com, soirée Rouge le 24 oct.). Toute commande qui modifie la production (`supabase db push`, `supabase functions deploy`, `supabase secrets set`, `node scripts/publish-sites.mjs`, `node scripts/prod-env.mjs … -- …`, tout script avec `--target prod`, réglages dans les tableaux de bord) : **annonce-la à Théo en une phrase et attends son « go »**, et Théo prévient Gabriel avant (on ne modifie pas la production à deux en même temps, surtout le 23 et le 24). Le travail courant se fait en local, sur les données de démo.
 4. **Jamais la CLI `vercel`.** Jamais de push sur `main` : une branche + une PR, relue par Gabriel.
 5. Avant une commande qui installe un logiciel ou modifie le système, dis à Théo ce qu'elle fait en une phrase.
 
@@ -83,11 +83,24 @@ pnpm dev:admin      # http://localhost:3000
 ```
 Montre à Théo comment se connecter avec `guest@demo.outly` (client) puis `door@demo.outly` (équipe).
 
-## Étape 8 — Accès à la production : PAS maintenant
-Théo n'a **pas** besoin d'accès à la production pour l'instant. Si Gabriel décide plus tard de lui en donner, ce sera **par invitation à son propre compte**, jamais avec les identifiants de Gabriel :
-- Supabase : Gabriel l'invite dans l'organisation (*Organization → Team → Invite*) ; Théo accepte par email puis tape lui-même `supabase login`.
-- Cloudflare : Gabriel l'ajoute comme membre (*Manage account → Members → Invite*) avec un rôle limité ; Théo accepte par email.
-Ne fais aucune de ces étapes de toi-même.
+## Étape 8 — Accès à la production (avec SES comptes) 👤 puis 💻
+Gabriel invite Théo sur chaque service ; Théo accepte **chaque email d'invitation** et se connecte avec **son** compte (double authentification activée partout). Ensuite :
+
+**Supabase** (base de production, projet `jxcjcmlvbgytsilbfayp`, région Sydney)
+1. 👤 Accepter l'invitation à l'organisation (email « You've been invited to join … on Supabase »), activer la double authentification sur supabase.com (*Account → Security*).
+2. 👤 Dans le terminal, Théo tape lui-même `supabase login` (navigateur → code à recopier).
+3. 💻 Vérifie : `pnpm exec supabase projects list` doit montrer **Outly**. Puis `pnpm exec supabase link --project-ref jxcjcmlvbgytsilbfayp` (sans mot de passe : la liaison suffit pour lire).
+4. Le **mot de passe de la base** (nécessaire seulement pour `db push`, voir `docs/DEPLOY.md` § 2.2) est partagé par Gabriel **dans un gestionnaire de mots de passe**, jamais par message. Sous PowerShell 7, Théo le tape lui-même sans l'afficher : `$env:SUPABASE_DB_PASSWORD = Read-Host -MaskInput`, puis `pnpm exec supabase db push`, puis `Remove-Item Env:SUPABASE_DB_PASSWORD`.
+
+**Cloudflare** (domaine `outly-sydney.com`, sites `outly-customer` et `outly-staff`, CAPTCHA Turnstile)
+1. 👤 Accepter l'invitation au compte Cloudflare de Gabriel (email), activer la double authentification (*My Profile → Authentication*).
+2. 👤 Dans le terminal : `npx wrangler@4.42.0 login` (navigateur → *Allow*). Si plusieurs comptes sont proposés, choisir celui de Gabriel (« Gabrielsabourin1@gmail.com's Account »).
+3. 💻 Vérifie : `npx wrangler@4.42.0 pages project list` doit montrer `outly-customer` et `outly-staff`.
+
+**GitHub** : accès au dépôt via l'invitation de Matthieu (étape 3).
+**Vercel** (admin seulement, déployé automatiquement depuis `main`) : accès via Matthieu, par le tableau de bord. Jamais la CLI `vercel`.
+
+**Comment on publie** (lire `state/launch-2026-10-22/RUNBOOK.md` et `STATUS.md` avant toute action) : la base avec `supabase db push` (mot de passe requis), les sites avec `node scripts/publish-sites.mjs --ref jxcjcmlvbgytsilbfayp --turnstile <clé de site publique> --privacy-email <email>`. Toujours une **version de test** d'abord (`--branch <nom>`), jamais la clé Turnstile de test sur les vrais sites.
 
 ## Rapport final
 Termine par un résumé court pour Théo, en français simple :

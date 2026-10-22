@@ -77,7 +77,7 @@ Supabase Pro (région Sydney) · Cloudflare Pages (`domaine`, `staff.domaine`, `
 | Tableau de bord admin (`apps/admin`) ; renfort sur le site client à partir du 19 oct | Tondal775 |
 | Relecture des PR | Les deux, chacun celles de l'autre |
 
-**Accès aux données de production :** pour l'instant, Tondal775 travaille en local sur les données de démo uniquement (pas de clés ni de base de production), jusqu'à décision contraire de l'équipe.
+**Accès aux données de production :** décision de Gabriel du 23 oct. : **Théo (Tondal775) a accès à tout** (GitHub, Supabase, Cloudflare, Vercel), **avec ses propres comptes** et la double authentification, sur invitation (jamais les identifiants de quelqu'un d'autre). Les changements en production sont annoncés à l'autre avant d'être faits.
 
 **Décalage horaire :** Sydney a ~9 h d'avance sur la France. On travaille par PR, en asynchrone.
 
