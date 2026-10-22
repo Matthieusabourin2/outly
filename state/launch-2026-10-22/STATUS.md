@@ -16,9 +16,12 @@
 - `delete-account` : autre site → 403, sans session → 401, depuis outly-sydney.com → 200 et compte supprimé.
 - Base laissée vide (0 lieu, 0 compte).
 
+- Aperçu de lien (WhatsApp / iMessage / Instagram) : titre, description, image `og-image.png`.
+- Cloudflare Web Analytics désactivé : 0 violation CSP sur nos pages (les seules restantes sont dans le cadre du CAPTCHA, page de Cloudflare).
+- CAPTCHA Turnstile : clé secrète changée (rotate), activé dans Supabase. Inscription sans jeton → refusée ; faux jeton → refusé ; connexion sans jeton → refusée.
+- ⚠️ Depuis le CAPTCHA, `e2e/prod-smoke.mjs` (clé de test) ne peut plus passer : pour le relancer, désactiver le Captcha dans Supabase le temps du test, puis le réactiver.
+
 ## Reste à faire
-- 👤 Turnstile : **Rotate secret key** (l'ancienne clé secrète est passée dans la conversation), coller la nouvelle dans Supabase → Captcha, activer → 💻 vérifier.
-- 👤 Cloudflare Web Analytics : désactiver l'injection automatique (bloquée par la CSP, bruit dans la console).
 - 👤 Infos de Rouge → 💻 `rouge:setup`, `rouge:staff --print-passwords`, test sur la vraie soirée.
 - 👤 Test sur vrais téléphones (iPhone + Android).
 - 👤 (Option) Resend : emails de code, mot de passe oublié, emails du personnel → republier avec `--emails on`.
