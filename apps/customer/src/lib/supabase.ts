@@ -40,3 +40,9 @@ export function authRedirectUrl(path = '/'): string | undefined {
 }
 
 export const GOOGLE_SIGN_IN_ENABLED = process.env.EXPO_PUBLIC_GOOGLE_SIGN_IN === 'on';
+
+/**
+ * Email codes and password-reset emails. 'off' until the hosted project has its own mailer
+ * (Supabase's default one only reaches the project team, so guests would never get the email).
+ */
+export const EMAIL_AUTH_ENABLED = process.env.EXPO_PUBLIC_EMAIL_AUTH !== 'off';

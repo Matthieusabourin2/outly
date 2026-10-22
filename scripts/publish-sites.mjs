@@ -2,7 +2,10 @@
 // (direct upload with wrangler, after `npx wrangler login`). Never the Vercel CLI.
 //
 //   node scripts/publish-sites.mjs --ref <supabase project ref> --turnstile <site key> \
-//     --privacy-email <address> [--only customer|staff] [--build-only] [--branch <name>]
+//     --privacy-email <address> [--only customer|staff] [--build-only] [--branch <name>] [--emails on]
+//
+// --emails on shows "Email me a code" / "Forgot password?" on the customer site. Leave it off until
+// the hosted project has its own mailer (Supabase's default mailer only reaches the project team).
 //
 // --branch <name> (not "main") publishes a PREVIEW at https://<name>.<project>.pages.dev and leaves
 // the real sites untouched. Used by the production smoke test with Cloudflare's always-pass
@@ -61,6 +64,7 @@ const buildEnv = {
   EXPO_PUBLIC_TURNSTILE_SITE_KEY: args.turnstile,
   EXPO_PUBLIC_PRIVACY_EMAIL: args['privacy-email'],
   EXPO_PUBLIC_GOOGLE_SIGN_IN: 'off',
+  EXPO_PUBLIC_EMAIL_AUTH: args.emails === 'on' ? 'on' : 'off',
 };
 
 function* files(dir) {

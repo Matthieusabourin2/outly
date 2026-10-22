@@ -6,7 +6,7 @@ import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type TextInput } from 'react-native';
 import { Captcha } from '@/components/Captcha';
 import { CAPTCHA_REQUIRED } from '@/lib/captcha';
-import { GOOGLE_SIGN_IN_ENABLED, authRedirectUrl, supabase } from '@/lib/supabase';
+import { EMAIL_AUTH_ENABLED, GOOGLE_SIGN_IN_ENABLED, authRedirectUrl, supabase } from '@/lib/supabase';
 
 type Mode = 'signup' | 'login' | 'code';
 
@@ -232,14 +232,16 @@ export default function SignInScreen() {
           </Text>
         ) : null}
 
-        <View style={styles.links}>
-          {mode === 'code' ? (
-            <Button label="Use a password instead" variant="ghost" onPress={() => switchMode('signup')} />
-          ) : (
-            <Button label="Email me a code instead" variant="ghost" onPress={() => switchMode('code')} />
-          )}
-          {mode === 'login' ? <Button label="Forgot password?" variant="ghost" onPress={resetPassword} disabled={busy || captchaMissing} /> : null}
-        </View>
+        {EMAIL_AUTH_ENABLED ? (
+          <View style={styles.links}>
+            {mode === 'code' ? (
+              <Button label="Use a password instead" variant="ghost" onPress={() => switchMode('signup')} />
+            ) : (
+              <Button label="Email me a code instead" variant="ghost" onPress={() => switchMode('code')} />
+            )}
+            {mode === 'login' ? <Button label="Forgot password?" variant="ghost" onPress={resetPassword} disabled={busy || captchaMissing} /> : null}
+          </View>
+        ) : null}
       </View>
 
       {GOOGLE_SIGN_IN_ENABLED ? (

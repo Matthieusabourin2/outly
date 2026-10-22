@@ -73,9 +73,10 @@ Depuis la racine du projet, sur la branche qui doit partir en production (à jou
 pnpm exec supabase login                          # 👤 ouvre le navigateur pour se connecter à Supabase
 pnpm exec supabase link --project-ref <ref>       # 👤 demande le mot de passe de la base (gestionnaire)
 pnpm exec supabase db push --dry-run              # montre les migrations qui seront appliquées
-pnpm exec supabase db push                        # applique 0001, 0002, 0003 (et rien d'autre)
+pnpm exec supabase db push                        # applique les migrations pas encore envoyées (et rien d'autre)
 ```
 
+- ⚠️ **Toujours avec le mot de passe de la base** (`read -s SUPABASE_DB_PASSWORD && export SUPABASE_DB_PASSWORD`, puis `db push`, puis `unset SUPABASE_DB_PASSWORD`). Sans mot de passe, la CLI se connecte avec un rôle temporaire (`cli_login_postgres`) qui ne voit pas le schéma `extensions` : la migration 0001 échoue sur `gen_random_bytes` (constaté le 22 oct. ; rien n'est appliqué dans ce cas, chaque migration est atomique).
 - `db push` n'applique **que** les migrations de `supabase/migrations/`. Il ne lance pas les données de démo (`seed_demo.sql`), sauf avec `--include-seed` : **ne jamais ajouter ce drapeau**.
 - ✅ VÉRIFIER : `pnpm exec supabase migration list` montre `0001`, `0002`, `0003` en local **et** en distant. Dans le tableau de bord → *Table Editor*, la table `venues` est **vide**.
 
