@@ -14,13 +14,16 @@ const QUIET_ZONE_RATIO = 1 / 8;
 
 export default function PassScreen() {
   const { profile } = useAuth();
-  const { loading, error, night, booking, reload } = useNight();
+  const { loading, error, night, booking, offer, reload } = useNight();
   const { width } = useWindowDimensions();
   const suspended = !!profile?.suspended_at;
   const over = !!night && isNightOver(night.event?.starts_at, night.event?.ends_at);
   const showingPass = !!night && !!booking && booking.status !== 'checked_in' && !over && !suspended;
-  // Keep the phone awake while the guest waits in the queue with the pass open.
-  useKeepScreenOn(showingPass);
+  // After the door, the same pass is still needed at the bar while an Outly offer is on
+  // (redeem_offer accepts checked-in passes, once per pass).
+  const barPass = !!night && booking?.status === 'checked_in' && !!offer && !over && !suspended;
+  // Keep the phone awake while the guest waits in the queue (or at the bar) with the pass open.
+  useKeepScreenOn(showingPass || barPass);
 
   if (loading) {
     return (
@@ -71,7 +74,7 @@ export default function PassScreen() {
 
   const venue = night.venue?.name ?? night.event?.title ?? 'Outly night';
 
-  if (booking.status === 'checked_in') {
+  if (booking.status === 'checked_in' && !barPass) {
     return (
       <Screen scroll={false}>
         <EmptyState
@@ -104,8 +107,9 @@ export default function PassScreen() {
       <OfflineBanner message={OFFLINE_GUEST_MESSAGE} />
       <View style={styles.header}>
         <Text variant="micro" tone="accent">
-          YOUR OUTLY PASS
+          {barPass ? 'YOUR OUTLY PASS · BAR' : 'YOUR OUTLY PASS'}
         </Text>
+        {barPass ? <Text variant="h3">You’re in! Show this pass at the bar.</Text> : null}
         <Text variant="h1" accessibilityRole="header">
           {venue} · {sydneyDay(night.night)}
         </Text>
@@ -123,19 +127,25 @@ export default function PassScreen() {
         ) : null}
         <View style={styles.badge}>
           <Text variant="micro" tone="success">
-            FAST LANE · VALID ALL NIGHT
+            {barPass ? 'CHECKED IN · BAR OFFER' : 'FAST LANE · VALID ALL NIGHT'}
           </Text>
         </View>
       </Card>
 
       <View style={styles.notice}>
-        <Ionicons name="ticket-outline" size={22} color={colors.warning} />
-        <Text variant="caption" tone="secondary" style={styles.flex}>
-          Show this pass <Text variant="caption">and your event ticket</Text> at the fast lane. The pass works once.
-        </Text>
+        <Ionicons name={barPass ? 'wine-outline' : 'ticket-outline'} size={22} color={colors.warning} />
+        {barPass && offer ? (
+          <Text variant="caption" tone="secondary" style={styles.flex}>
+            <Text variant="caption">{offer.title}.</Text> {offer.description ?? 'One per pass.'}
+          </Text>
+        ) : (
+          <Text variant="caption" tone="secondary" style={styles.flex}>
+            Show this pass <Text variant="caption">and your event ticket</Text> at the fast lane. The pass works once.
+          </Text>
+        )}
       </View>
       <Text variant="caption" tone="muted" style={styles.center}>
-        Turn your screen brightness up at the door.
+        Turn your screen brightness up at the {barPass ? 'bar' : 'door'}.
       </Text>
     </Screen>
   );
