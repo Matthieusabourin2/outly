@@ -182,16 +182,13 @@ export default function NightScreen() {
         </Card>
       ) : null}
 
-      <View style={styles.section}>
-        <Text variant="h2" accessibilityRole="header">
-          Line-up
-        </Text>
-        {sets.length === 0 ? (
-          <View style={styles.soon}>
-            <Text tone="muted">Line-up announced soon</Text>
-          </View>
-        ) : (
-          sets.map((s) => (
+      {/* No line-up entered (e.g. Rouge): no section at all, rather than a promise of one. */}
+      {sets.length > 0 ? (
+        <View style={styles.section}>
+          <Text variant="h2" accessibilityRole="header">
+            Line-up
+          </Text>
+          {sets.map((s) => (
             <View key={s.id} style={styles.set}>
               <Text variant="bodyStrong" style={styles.flex}>
                 {s.artist_name}
@@ -203,9 +200,9 @@ export default function NightScreen() {
                 </Text>
               ) : null}
             </View>
-          ))
-        )}
-      </View>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <Text variant="h2" accessibilityRole="header">
@@ -277,7 +274,6 @@ const styles = StyleSheet.create({
   track: { height: 8, borderRadius: 4, backgroundColor: colors.surfaceRaised, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
   section: { gap: spacing[3] },
-  soon: { padding: spacing[4], borderRadius: radii.md, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border },
   set: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], borderBottomWidth: 1, borderBottomColor: colors.border },
   notice: { flexDirection: 'row', gap: spacing[3], alignItems: 'center', padding: spacing[4], borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   flex: { flex: 1 },
