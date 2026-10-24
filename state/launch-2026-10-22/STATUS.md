@@ -21,6 +21,12 @@
 - CAPTCHA Turnstile : clé secrète changée (rotate), activé dans Supabase. Inscription sans jeton → refusée ; faux jeton → refusé ; connexion sans jeton → refusée.
 - ⚠️ Depuis le CAPTCHA, `e2e/prod-smoke.mjs` (clé de test) ne peut plus passer : pour le relancer, désactiver le Captcha dans Supabase le temps du test, puis le réactiver.
 
+## Soirée Rouge (créée le 24 oct., ≈ 18 h 30)
+- Rouge · Saturday Night — Bridge Walk Rooftop Terrace, 37 Wheat Road, Pyrmont — sam. 24 oct. 21:00 → dim. 25 oct. 03:00 — 200 places, fast lane.
+- Offre bar ON : « A special promotion at the bar for Outly members » (une par pass) — `pnpm rouge:offer … --off` pour la couper.
+- Comptes à Rouge : `door@outly-sydney.com` (porte), `bar@outly-sydney.com` (bar), `team@outly-sydney.com` (manager partagé : porte + bar + chiffres), compte de Gabriel (manager). Mots de passe remis une fois dans la conversation, nulle part ailleurs. **À bannir le 25.**
+- Affiche + QR code vers https://outly-sydney.com : `~/Desktop/outly-qr/`.
+
 ## Reste à faire
 - 👤 Infos de Rouge → 💻 `rouge:setup`, `rouge:staff --print-passwords`, test sur la vraie soirée.
 - 👤 Test sur vrais téléphones (iPhone + Android).
