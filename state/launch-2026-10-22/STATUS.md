@@ -24,7 +24,7 @@
 ## Soirée Rouge (créée le 24 oct., ≈ 18 h 30)
 - Rouge · Saturday Night — Bridge Walk Rooftop Terrace, 37 Wheat Road, Pyrmont — sam. 24 oct. 21:00 → dim. 25 oct. 03:00 — 200 places, fast lane.
 - Offre bar ON : « A special promotion at the bar for Outly members » (une par pass) — `pnpm rouge:offer … --off` pour la couper.
-- Comptes à Rouge : `door@outly-sydney.com` (porte), `bar@outly-sydney.com` (bar), `team@outly-sydney.com` (manager partagé : porte + bar + chiffres), compte de Gabriel (manager). Mots de passe remis une fois dans la conversation, nulle part ailleurs. **À bannir le 25.**
+- Comptes à Rouge : `door@outly-sydney.com` (porte), `bar@outly-sydney.com` (bar), `team@outly-sydney.com` (manager partagé : porte + bar + chiffres), compte de Gabriel (manager). Mots de passe remis une fois dans la conversation, nulle part ailleurs. **Bannis le 6 nov.** (rôles retirés + `ban_duration`) ; un iPhone était encore connecté à `team@` le 27 oct.
 - Affiche + QR code vers https://outly-sydney.com : `~/Desktop/outly-qr/`.
 
 ## Reste à faire
@@ -32,4 +32,5 @@
 - 👤 Test sur vrais téléphones (iPhone + Android).
 - 👤 (Option) Resend : emails de code, mot de passe oublié, emails du personnel → republier avec `--emails on`.
 - 💻 Après Rouge : supprimer la vue `public_profiles` (inutilisée ; signalée par le conseiller Supabase) — migration 0007 + test H3.
-- 👤 Après Rouge : changer le mot de passe de la base (passé dans la conversation), bannir les comptes du personnel.
+- 👤 Après Rouge : changer le mot de passe de la base (passé dans la conversation).
+- Bilan Rouge : 5 comptes (Gabriel, Théo, 3 personnel), 1 réservation, 1 entrée (scan de test), 0 offre utilisée — l'appli n'a pas été diffusée aux invités. Échéance « applis stores le 8 nov. » annulée par les CEO.
