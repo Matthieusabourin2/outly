@@ -3,7 +3,7 @@ import './storage';
 import { createClient } from '@supabase/supabase-js';
 import type { Database, OutlyClient } from '@outly/db';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 const rawUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const publishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -33,13 +33,23 @@ export const supabase: OutlyClient = createClient<Database>(resolveDevUrl(rawUrl
   },
 });
 
+// Native apps: refresh the session only while the app is in the foreground (Supabase React
+// Native guide). The browser handles this itself on the website.
+if (Platform.OS !== 'web') {
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') void supabase.auth.startAutoRefresh();
+    else void supabase.auth.stopAutoRefresh();
+  });
+}
+
 /** Where Supabase sends people back after Google sign-in or a password reset. */
 export function authRedirectUrl(path = '/'): string | undefined {
   if (Platform.OS === 'web' && typeof window !== 'undefined') return `${window.location.origin}${path}`;
   return undefined;
 }
 
-export const GOOGLE_SIGN_IN_ENABLED = process.env.EXPO_PUBLIC_GOOGLE_SIGN_IN === 'on';
+/** Website only: the native apps would need an in-app browser + outly:// redirect flow first. */
+export const GOOGLE_SIGN_IN_ENABLED = Platform.OS === 'web' && process.env.EXPO_PUBLIC_GOOGLE_SIGN_IN === 'on';
 
 /**
  * Email codes and password-reset emails. 'off' until the hosted project has its own mailer

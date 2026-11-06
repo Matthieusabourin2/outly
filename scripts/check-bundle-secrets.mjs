@@ -4,6 +4,7 @@
 //  2. scans the apps' source for PUBLIC env vars whose name suggests a secret
 //     (EXPO_PUBLIC_* / NEXT_PUBLIC_* are inlined into the bundle by design).
 // Usage: node scripts/check-bundle-secrets.mjs <dist dir> [<dist dir> ...]
+//   Android APK: unzip assets/index.android.bundle, run `strings` on it into a .txt file, scan that folder.
 // Prints the file and the kind of finding only — never the value itself.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -38,6 +39,15 @@ function* walk(dir) {
   }
 }
 
+/**
+ * Native (Hermes) bundles store short strings back to back. @supabase/functions-js contains the
+ * literal "sb_secret_" (to recognise secret keys), which can land right before React Native's
+ * "_fbBatchedBridge…" identifiers and look like a key. Only that exact neighbour is removed.
+ */
+function withoutKnownNeighbours(text) {
+  return text.replace(/sb_secret_(?=_fbBatchedBridge)/g, '');
+}
+
 function jwtRole(payloadPart) {
   try {
     return JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf8')).role ?? null;
@@ -59,7 +69,7 @@ for (const dist of dists) {
     if (!TEXT_EXT.has(extname(file))) continue;
     const text = readFileSync(file, 'utf8');
     scanned++;
-    for (const [kind, re] of VALUE_PATTERNS) if (re.test(text)) findings.push(`${file}: ${kind}`);
+    for (const [kind, re] of VALUE_PATTERNS) if (re.test(withoutKnownNeighbours(text))) findings.push(`${file}: ${kind}`);
     for (const m of text.matchAll(JWT)) {
       const role = jwtRole(m[1]);
       if (role && role !== 'anon') findings.push(`${file}: Supabase JWT with role "${role}"`);
