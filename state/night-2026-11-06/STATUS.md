@@ -4,12 +4,16 @@ Plan : `~/.claude/plans/zippy-plotting-prism.md` (copie des étapes ci-dessous).
 
 | Étape | État | Notes |
 |---|---|---|
-| 1. PR `launch/2026-10-22` → `main` | 🔄 PR #6 ouverte, CI en cours | ne pas fusionner (Gabriel) |
-| 2. Appli native prête (CAPTCHA WebView, écran allumé, Google web seulement, clavier, sessions) | ⏳ | |
-| 3. Build Android EAS (APK preview) | ⏳ | |
+| 1. PR `launch/2026-10-22` → `main` | ✅ PR #6, 7 checks verts | ne pas fusionner (Gabriel). Correctif sécurité ajouté : Next.js 16.4.5 (failles critiques) + outils de dev |
+| 2. Appli native prête (CAPTCHA WebView, écran allumé, Google web seulement, clavier, sessions) | ✅ codé, typecheck/lint/tests/expo-doctor verts | à prouver sur émulateur (étape 4) |
+| 3. Build Android EAS (APK preview) | 🔄 build 47b6866b en cours | projet @gabsab1/outly, variables publiques dans EAS (preview) |
 | 4. Vérification sur émulateur contre la prod | ⏳ | |
-| 5. Page réunion CEO | ⏳ | |
+| 5. Page réunion CEO | ✅ `state/ceo-meeting-2026-11.md` (rédigée + vérifiée par 2 agents) | rien sur Théo (c'est à Gabriel de le présenter) |
 | 6. Audit + MORNING.md | ⏳ | |
 
 ## Journal
 - 2026-11-07 — début de la nuit. caffeinate 12 h. PR #6 ouverte.
+- 2026-11-07 — **iCloud** : `~/Documents` est synchronisé avec iCloud (« Optimiser le stockage », disque à 92 %) ; `fileproviderd`/`bird`/`cloudd` à 40-60 % de CPU bloquaient les lectures (build Next « connection timed out »). Travail de la nuit dans une copie hors iCloud : `~/outly-night` (git worktree) ; dépôt principal laissé sur un commit fixe (détaché). Hors iCloud, l'admin compile en 1,7 s.
+- 2026-11-07 — Audit des dépendances rouge sur PR #6 : 2 failles **critiques** Next.js (exécution de code à distance) → Next 16.4.5 ; outils de dev mis à jour / forcés en version corrigée ; 2 risques acceptés et justifiés (decode-uri-component via expo-router, zod 3 en lint). PR #6 verte.
+- 2026-11-07 — Natif : Turnstile dans une WebView (origine outly-sydney.com, messages filtrés, navigation bloquée), expo-keep-awake, expo-network, clavier, rafraîchissement de session, Google web seulement, patchs SDK 57. EAS : projet créé, keystore Android dans le cloud Expo, build preview lancé.
+- 2026-11-07 — Page CEO rédigée et vérifiée (workflow 2 agents).
