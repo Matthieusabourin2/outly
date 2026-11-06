@@ -1,0 +1,75 @@
+# Native smoke test (Android, Maestro): a new guest signs up in the installed app — CAPTCHA
+# included — fills the 18+ profile, joins the night and gets a QR pass; the session survives
+# an app restart. Run against PRODUCTION with a throw-away account (see e2e/native/README.md).
+#   maestro test -e EMAIL=… -e PASSWORD=… -e USERNAME=… -e VENUE="Outly Smoke Test" e2e/native/signup-pass.yaml
+appId: com.outly.app
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Good times, anytime."
+    timeout: 30000
+- takeScreenshot: 01-sign-up
+- tapOn:
+    text: "Email"
+    index: 1
+- inputText: ${EMAIL}
+- tapOn:
+    text: "Password"
+    index: 1
+- inputText: ${PASSWORD}
+- hideKeyboard
+# Cloudflare Turnstile runs in the WebView; "Success!" appears once the token is issued.
+- extendedWaitUntil:
+    visible: "Success!"
+    timeout: 45000
+- takeScreenshot: 02-captcha-ok
+- tapOn: "Create account"
+- extendedWaitUntil:
+    visible: "Create your profile"
+    timeout: 30000
+- tapOn:
+    text: "First name"
+    index: 1
+- inputText: "Smoke"
+- tapOn:
+    text: "Username"
+    index: 1
+- inputText: ${USERNAME}
+- tapOn:
+    text: "Day"
+    index: 1
+- inputText: "15"
+- tapOn:
+    text: "Month"
+    index: 1
+- inputText: "6"
+- tapOn:
+    text: "Year"
+    index: 1
+- inputText: "1998"
+- hideKeyboard
+- takeScreenshot: 03-profile
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: ${VENUE}
+    timeout: 30000
+- takeScreenshot: 04-night
+- tapOn: "Join the Outly list"
+- extendedWaitUntil:
+    visible: "How do you want to appear?"
+    timeout: 15000
+- tapOn: "Join as ghost"
+- extendedWaitUntil:
+    visible: "YOUR OUTLY PASS"
+    timeout: 30000
+- assertVisible: "FAST LANE · VALID ALL NIGHT"
+- takeScreenshot: 05-pass
+# The session is kept on the device: after a restart the guest lands back in the app.
+- stopApp
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: ${VENUE}
+    timeout: 30000
+- takeScreenshot: 06-after-restart
