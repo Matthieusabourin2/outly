@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "Outly",
+  "short_name": "Outly",
+  "description": "Join the Outly guest list and get your fast-lane pass.",
+  "lang": "en-AU",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0B1E",
+  "theme_color": "#0B0B1E",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

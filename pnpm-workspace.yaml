@@ -1,5 +1,21 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "e2e"
 allowBuilds:
   unrs-resolver: true
+# Known advisories accepted after review (see docs/SECURITY.md § Dépendances). CI fails on any OTHER high/critical.
+# Remove an entry as soon as a fixed version ships.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv # node-forge (high) via @expo/cli code signing — dev/build tool, never shipped to browsers, no fix yet
+    - GHSA-vfj7-8cjw-p6xm # braces (high) via shadcn CLI file globbing — dev tool, never shipped to browsers, no fix yet
+    - GHSA-qr28-fpjm-wq7f # decode-uri-component 0.2.2 (high, slow decoding of a crafted URL) via query-string 7 ← expo-router: only slows the visitor's own tab; the fix (0.5.x) is ESM-only and breaks query-string 7 (CJS) — re-check on each Expo SDK update
+    - GHSA-mrhx-c7xc-m3w5 # zod 3.x (high, memory on huge inputs) via eslint-plugin-react-hooks / zod-to-json-schema: lint and shadcn CLI only, never shipped; zod 4 is forced to the fixed 4.6.7 below
+# Fixed versions of vulnerable dev/build dependencies (same major, see docs/SECURITY.md § 6).
+overrides:
+  "node-forge@<1.4.1": "^1.4.3"
+  "systeminformation@<5.33.16": "^5.33.19"
+  "undici@>=7.0.0 <7.30.1": "^7.30.2"
+  "vite@>=8.0.0 <8.3.3": "^8.3.6"
+  "zod@>=4.0.0 <4.6.6": "^4.6.7"

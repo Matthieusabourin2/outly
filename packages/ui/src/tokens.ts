@@ -34,6 +34,10 @@ export const colors = {
   info: '#38BDF8',
   rating: '#FACC15',
 
+  // QR codes need maximum contrast on a white quiet zone, in every theme
+  qrLight: '#FFFFFF',
+  qrDark: '#0B0B1E',
+
   // Deal source labels (D5) — must always be visible on a deal
   sourceOutlyPartner: '#A78BFA', // "Outly deal"
   sourcePublicListing: '#94A3B8',// "Venue offer · check with venue"
@@ -82,6 +86,7 @@ export const type = {
   bodyStrong: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21 },
   caption: { fontFamily: fonts.medium,    fontSize: 12, lineHeight: 16 },
   micro:   { fontFamily: fonts.semibold,  fontSize: 10, lineHeight: 12, letterSpacing: 0.4 },
+  tabLabel: { fontFamily: fonts.medium,    fontSize: 11, lineHeight: 14 },
 } as const;
 
 export const shadow = {

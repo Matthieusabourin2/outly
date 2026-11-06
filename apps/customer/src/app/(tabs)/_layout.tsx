@@ -1,9 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, fonts, layout } from '@outly/ui';
+import { colors, layout, type as typeScale } from '@outly/ui';
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
-import { AiTabButton } from '@/components/AiTabButton';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -14,7 +13,7 @@ function icon(active: IconName, inactive: IconName) {
   return TabIcon;
 }
 
-/** D11: Home · Explore · AI · Squad · Profile. */
+/** SPEC A8: Night · Pass · Profile for the launch (Explore / AI / Squad come back later). */
 export default function TabsLayout() {
   return (
     <Tabs
@@ -23,13 +22,11 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, minHeight: layout.tabBarHeight },
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+        tabBarLabelStyle: { fontFamily: typeScale.tabLabel.fontFamily, fontSize: typeScale.tabLabel.fontSize },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: icon('home', 'home-outline') }} />
-      <Tabs.Screen name="explore" options={{ title: 'Explore', tabBarIcon: icon('compass', 'compass-outline') }} />
-      <Tabs.Screen name="ai" options={{ title: 'AI', tabBarButton: (props) => <AiTabButton {...props} /> }} />
-      <Tabs.Screen name="squad" options={{ title: 'Squad', tabBarIcon: icon('people', 'people-outline') }} />
+      <Tabs.Screen name="index" options={{ title: 'Night', tabBarIcon: icon('moon', 'moon-outline') }} />
+      <Tabs.Screen name="pass" options={{ title: 'Pass', tabBarIcon: icon('qr-code', 'qr-code-outline') }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon('person', 'person-outline') }} />
     </Tabs>
   );

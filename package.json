@@ -9,6 +9,8 @@
     "dev:customer": "pnpm --filter @outly/customer start",
     "dev:partner": "pnpm --filter @outly/partner start",
     "dev:admin": "pnpm --filter @outly/admin dev",
+    "build:customer-web": "pnpm --filter @outly/customer build:web",
+    "build:staff-web": "pnpm --filter @outly/partner build:web",
     "db:reset": "supabase db reset",
     "db:test": "node scripts/db-test.mjs",
     "db:types": "node scripts/db-types.mjs",
@@ -16,10 +18,19 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "env:local": "node scripts/env-local.mjs",
-    "db:start": "supabase start",
-    "db:stop": "supabase stop"
+    "db:start": "node scripts/db-start.mjs",
+    "db:stop": "supabase stop",
+    "db:seed-users": "node scripts/seed-demo-users.mjs",
+    "rouge:setup": "node scripts/rouge/setup-night.mjs",
+    "rouge:staff": "node scripts/rouge/staff.mjs",
+    "check:secrets": "node scripts/check-bundle-secrets.mjs",
+    "check:csp": "node scripts/check-csp-headers.mjs",
+    "security:csp": "node security/csp-test.mjs",
+    "e2e": "node e2e/run.mjs",
+    "rouge:offer": "node scripts/rouge/offer.mjs"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "supabase": "2.119.0",
     "turbo": "^2.1.0",
     "typescript": "^5.6.0"
