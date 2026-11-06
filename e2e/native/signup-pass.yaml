@@ -1,6 +1,6 @@
 # Native smoke test (Android, Maestro): a new guest signs up in the installed app — CAPTCHA
 # included — fills the 18+ profile, joins the night and gets a QR pass; the session survives
-# an app restart. Run against PRODUCTION with a throw-away account (see e2e/native/README.md).
+# an app restart. Run against PRODUCTION with a throw-away account: see e2e/native/README.md.
 #   maestro test -e EMAIL=… -e PASSWORD=… -e USERNAME=… -e VENUE="Outly Smoke Test" e2e/native/signup-pass.yaml
 appId: com.outly.app
 ---
@@ -19,10 +19,12 @@ appId: com.outly.app
     index: 1
 - inputText: ${PASSWORD}
 - hideKeyboard
-# Cloudflare Turnstile runs in the WebView; "Success!" appears once the token is issued.
+# Cloudflare Turnstile runs in the WebView; the button turns on once a token is issued.
 - extendedWaitUntil:
-    visible: "Success!"
-    timeout: 45000
+    visible:
+      text: "Create account"
+      enabled: true
+    timeout: 60000
 - takeScreenshot: 02-captcha-ok
 - tapOn: "Create account"
 - extendedWaitUntil:
