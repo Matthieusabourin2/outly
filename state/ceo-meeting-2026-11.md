@@ -30,7 +30,7 @@
 - Pass QR, scan à la porte avec la caméra du téléphone, promotion bar utilisable une fois par pass.
 - Statistiques en direct pour le manager, suppression du compte par l'utilisateur.
 - **Sécurité :** deux audits complets, 13 failles trouvées et corrigées avant le lancement, chacune avec un test automatique ; tous les contrôles sont au vert. Le 7 nov., une faille critique de Next.js (l'outil du site admin) a été corrigée.
-- **Applis mobiles :** le code tourne sur iPhone et Android. Une version Android de test (fichier **APK**, installable sans le Play Store) est en préparation ce soir. Pour l'iPhone, il faut d'abord un compte Apple Developer.
+- **Applis mobiles :** une version Android de test (fichier **APK**, installable sans le Play Store) est prête et a été testée de bout en bout sur la vraie plateforme : inscription, profil, soirée, pass QR. Pour l'iPhone, il faut d'abord un compte Apple Developer.
 - Base de données Supabase (offre gratuite, hébergée à Sydney), domaine outly-sydney.com chez Cloudflare.
 
 ## 3. Les décisions à prendre
