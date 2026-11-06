@@ -17,10 +17,14 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-safe-area-context": "*"
+    "react-native-safe-area-context": "*",
+    "expo-keep-awake": "*",
+    "expo-network": "*"
   },
   "devDependencies": {
     "@types/react": "~19.2.18",
+    "expo-keep-awake": "~57.0.2",
+    "expo-network": "~57.0.3",
     "react": "19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
@@ -31,6 +35,12 @@
       "optional": true
     },
     "react-native-safe-area-context": {
+      "optional": true
+    },
+    "expo-keep-awake": {
+      "optional": true
+    },
+    "expo-network": {
       "optional": true
     }
   }

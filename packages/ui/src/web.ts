@@ -10,7 +10,7 @@ function browserOnline(): boolean {
 /**
  * False while the browser says it has no network (airplane mode, no signal, Wi-Fi without
  * internet is NOT detected: requests then fail and screens show NETWORK_ERROR_MESSAGE).
- * Always true on native for now (store builds come later, SPEC A3).
+ * Native apps: see web.native.ts (expo-network).
  */
 export function useOnline(): boolean {
   const [online, setOnline] = useState(browserOnline);
@@ -34,7 +34,7 @@ type WakeLockNavigator = Navigator & { wakeLock?: { request: (type: 'screen') =>
 /**
  * Keeps the screen on while `active` (Screen Wake Lock API: Safari iOS 16.4+, Chrome Android).
  * The browser drops the lock whenever the page is hidden, so it is taken again on return.
- * Silently does nothing where unsupported (or on native until the store builds).
+ * Silently does nothing where unsupported. Native apps: see web.native.ts (expo-keep-awake).
  */
 export function useKeepScreenOn(active: boolean): void {
   useEffect(() => {
