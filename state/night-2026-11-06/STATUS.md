@@ -9,7 +9,7 @@ Plan : `~/.claude/plans/zippy-plotting-prism.md` (copie des étapes ci-dessous).
 | 3. Build Android EAS (APK preview) | ✅ build 47b6866b réussi (1er essai), APK 115 Mo | https://expo.dev/accounts/gabsab1/projects/outly/builds/47b6866b-e7a6-45c1-83ae-b04b9fcf9953 — aucun secret (contrôle sur les chaînes du bundle Hermes), pointe vers la prod, clé Turnstile présente |
 | 4. Vérification sur émulateur contre la prod | ⏳ | |
 | 5. Page réunion CEO | ✅ `state/ceo-meeting-2026-11.md` (rédigée + vérifiée par 2 agents) | rien sur Théo (c'est à Gabriel de le présenter) |
-| 6. Audit + MORNING.md | ⏳ | |
+| 6. Audit + MORNING.md | 🔄 revue 2 angles faite, correctifs commités (d9696c1) ; 2ᵉ build EAS en cours | |
 
 ## Journal
 - 2026-11-07 — début de la nuit. caffeinate 12 h. PR #6 ouverte.
@@ -18,3 +18,5 @@ Plan : `~/.claude/plans/zippy-plotting-prism.md` (copie des étapes ci-dessous).
 - 2026-11-07 — Natif : Turnstile dans une WebView (origine outly-sydney.com, messages filtrés, navigation bloquée), expo-keep-awake, expo-network, clavier, rafraîchissement de session, Google web seulement, patchs SDK 57. EAS : projet créé, keystore Android dans le cloud Expo, build preview lancé.
 - 2026-11-07 — Page CEO rédigée et vérifiée (workflow 2 agents).
 - 2026-11-07 — APK : le contrôle des secrets a signalé « clé secrète Supabase » → faux positif prouvé (texte `sb_secret_` de @supabase/functions-js collé à `_fbBatchedBridgeConfig` dans le bytecode Hermes, 10+22 = 32 caractères) ; exclusion ciblée, une vraie clé reste détectée.
+- 2026-11-07 — Émulateur : `sdkmanager` bloqué à 13 % après 1 h → arrêté ; téléchargement direct des zips depuis dl.google.com (3 Mo/s).
+- 2026-11-07 — Revue adversariale (workflow, angles sécurité + justesse) : **bug confirmé** — `originWhitelist` en `…/*` ne correspond jamais (la lib compare des origines sans chemin) → notre filtre n'était jamais appelé ; sur iPhone le widget aurait été bloqué. Corrigé (`['*']` + filtre par origine exacte). Aussi : origine exacte des messages, bouton « Try again » si le CAPTCHA ne charge pas, permissions overlay/stockage bloquées, `allowBackup: false`, modules natifs ajoutés au site équipe, README Maestro. 2ᵉ build EAS lancé.
