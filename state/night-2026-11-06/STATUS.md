@@ -9,7 +9,7 @@ Plan : `~/.claude/plans/zippy-plotting-prism.md` (copie des étapes ci-dessous).
 | 3. Build Android EAS (APK preview) | ✅ build 47b6866b réussi (1er essai), APK 115 Mo | https://expo.dev/accounts/gabsab1/projects/outly/builds/47b6866b-e7a6-45c1-83ae-b04b9fcf9953 — aucun secret (contrôle sur les chaînes du bundle Hermes), pointe vers la prod, clé Turnstile présente |
 | 4. Vérification sur émulateur contre la prod | ✅ builds 2 et 3 : parcours complet Maestro OK (CAPTCHA réel → profil → soirée → pass → redémarrage) ; QR = réservation en base ; écran allumé seulement sur l'onglet Pass | prod nettoyée : 0 compte / lieu de test |
 | 5. Page réunion CEO | ✅ `state/ceo-meeting-2026-11.md` (rédigée + vérifiée par 2 agents) | rien sur Théo (c'est à Gabriel de le présenter) |
-| 6. Audit + MORNING.md | 🔄 revue 2 angles faite, correctifs commités (d9696c1) ; 2ᵉ build EAS en cours | |
+| 6. Audit + MORNING.md | ✅ revue 2 angles + correctifs ; PR #7 verte ; `MORNING.md` écrit | page CEO publiée : https://claude.ai/artifact/X82G6HDmoCYzQXqddXfN7M |
 
 ## Journal
 - 2026-11-07 — début de la nuit. caffeinate 12 h. PR #6 ouverte.
@@ -23,3 +23,4 @@ Plan : `~/.claude/plans/zippy-plotting-prism.md` (copie des étapes ci-dessous).
 - 2026-11-07 — Émulateur Android 15 (AVD créé à la main, `avdmanager` ne reconnaît pas un émulateur installé hors sdkmanager). APK 1 : CAPTCHA Turnstile dans la WebView → « Success! » (case à cocher sur émulateur). APK 2 : 4 permissions seulement (INTERNET, NETWORK_STATE, WIFI_STATE, VIBRATE), sauvegarde désactivée ; **parcours Maestro complet OK contre la prod** ; QR décodé = réservation `confirmed` en base, code secret identique. Écran allumé : `KEEP_SCREEN_ON` sur Pass, mais restait après changement d'onglet → corrigé (`useIsFocused`), bord du cadre CAPTCHA corrigé, build 3 lancé.
 - 2026-11-07 — Web inchangé : `pnpm e2e` 8/8 (suppression de compte comprise, runtime Edge local relancé), `db:test` 69, `security:csp` 18/0, `check:csp` OK.
 - 2026-11-07 — Build 3 (versionCode 4) : écran allumé suit l'onglet Pass (1 → 0 → 1), cadre CAPTCHA complet, parcours Maestro complet OK. Production nettoyée (2 comptes de test + lieu de test supprimés ; restent Rouge et les 5 comptes réels). SPEC A13 + PLAN.md à jour.
+- 2026-11-07 — Fin : PR #7 (native → launch) verte ; page CEO publiée (artefact privé) ; émulateur arrêté, données de test locales et APK supprimés (disque 97 % → 96 %, 9,6 Go libres) ; dépôt principal remis sur `launch/2026-10-22` (une 1ʳᵉ tentative a échoué à cause d'iCloud, réussie au 2ᵉ essai). MORNING.md écrit. Boucle arrêtée.
