@@ -29,7 +29,7 @@ function widgetHtml(siteKey: string): string {
   return `<!doctype html>
 <html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}#w{width:100%}</style>
+<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}#w{width:100%;padding:0 1px;box-sizing:border-box}</style>
 <script>
 function send(m){window.ReactNativeWebView.postMessage(JSON.stringify(m));}
 function ready(){

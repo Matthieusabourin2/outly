@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { OUTLY_ERROR_MESSAGES, isNightOver, passQrValue, sydneyDay, sydneyTime } from '@outly/core';
 import { Avatar, Button, Card, EmptyState, OfflineBanner, Screen, Text, colors, layout, radii, spacing, useKeepScreenOn } from '@outly/ui';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '@/lib/auth';
@@ -23,7 +23,9 @@ export default function PassScreen() {
   // (redeem_offer accepts checked-in passes, once per pass).
   const barPass = !!night && booking?.status === 'checked_in' && !!offer && !over && !suspended;
   // Keep the phone awake while the guest waits in the queue (or at the bar) with the pass open.
-  useKeepScreenOn(showingPass || barPass);
+  // Only while the Pass tab is on screen: tabs stay mounted, so the lock is released on Night/Profile.
+  const focused = useIsFocused();
+  useKeepScreenOn((showingPass || barPass) && focused);
 
   if (loading) {
     return (
